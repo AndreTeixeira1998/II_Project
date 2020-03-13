@@ -1,0 +1,3 @@
+[submodule "tools/staruml-watermark"]
+	path = tools/staruml-watermark
+	url = https://github.com/seeren/staruml-watermark.git
