@@ -70,35 +70,3 @@ class TransfGraph(Graph):
             raise NameError('The requested nodes are not connected!')
 
         self.vert_dict[frm].update_weight(self.get_vertex(to), new_duration)
-
-
-
-if __name__ == '__main__':
-    machine_graph = TransfGraph()
-
-    machine_graph.add_vertex('P1')
-    machine_graph.add_vertex('P2')
-    machine_graph.add_vertex('P3')
-    machine_graph.add_vertex('P4')
-    machine_graph.add_vertex('P5')
-    machine_graph.add_vertex('P9')
-    machine_graph.add_vertex('P6')
-    machine_graph.add_vertex('P7')
-    machine_graph.add_vertex('P8')
-
-    machine_graph.add_edge('P1', 'P2', Transform('Ma', 'T1', 15))
-    machine_graph.add_edge('P1', 'P3', Transform('Mb', 'T2', 20))
-    machine_graph.add_edge('P2', 'P3', Transform('Ma', 'T1', 15))
-    machine_graph.add_edge('P2', 'P6', Transform('Ma', 'T2', 15))
-    machine_graph.add_edge('P3', 'P4', Transform('Mb', 'T1', 15))
-    machine_graph.add_edge('P4', 'P5', Transform('Mc', 'T1', 30))
-    machine_graph.add_edge('P4', 'P8', Transform('Mc', 'T2', 10))
-    machine_graph.add_edge('P7', 'P3', Transform('Mb', 'T2', 20))
-    machine_graph.add_edge('P6', 'P9', Transform('Ma', 'T3', 15))
-    machine_graph.add_edge('P8', 'P9', Transform('Mc', 'T3', 30))
-    machine_graph.add_edge('P7', 'P9', Transform('Mb', 'T3', 20))
-    machine_graph.update_edge_weight('P7', 'P9', 50)
-    #machine_graph.add_edge('P8', 'P7', Transform('Ma', 'T2', 30))
-
-    machine_graph.print_edges()
-    machine_graph.print_graph()
