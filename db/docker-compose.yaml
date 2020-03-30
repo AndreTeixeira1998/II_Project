@@ -1,0 +1,40 @@
+version: '3.5'
+services:
+  pgadmin:
+    ports:
+      - "5050:80"
+    networks:
+      - postgres-network
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-banana@ananas.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    volumes:
+       - pgadmin:/root/.pgadmin
+       - ./pgadmin_config:/cfg
+    restart: unless-stopped
+
+  postgres:
+    ports:
+      - "5432:5432"
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ii}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iisuckz}
+      #PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+      - ./postgres_config/:/docker-entrypoint-initdb.d/
+    networks:
+      - postgres-network
+    restart: unless-stopped
+
+networks:
+  postgres-network:
+    driver: bridge
+
+volumes:
+    postgres:
+    pgadmin:
