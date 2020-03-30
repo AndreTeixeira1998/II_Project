@@ -1,7 +1,7 @@
 import time
 import pickle
-from Optimizer.transfgraph import TransfGraph, Transform, Machine
-from Optimizer.search import dijkstra
+from transfgraph import TransfGraph, Transform, Machine
+from search import dijkstra
 
 class BabyOptimizer:
     '''
@@ -48,7 +48,7 @@ class BabyOptimizer:
 if __name__ == '__main__':
 
     #Load optimizer configs from a pickle
-    with open("config/babyFactory.pickle","rb") as config_pickle:
+    with open("./config/babyFactory.pickle","rb") as config_pickle:
         optimizer = pickle.load(config_pickle)
 
 

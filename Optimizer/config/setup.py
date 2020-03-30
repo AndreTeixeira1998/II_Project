@@ -1,6 +1,8 @@
 import pickle
-from Optimizer.baby_optimizer import BabyOptimizer
-from Optimizer.transfgraph import TransfGraph, Transform, Machine
+import sys
+sys.path.insert(0, "..")
+from baby_optimizer import BabyOptimizer
+from transfgraph import TransfGraph, Transform, Machine
 
 #Object instantiation
 optimizer = BabyOptimizer()

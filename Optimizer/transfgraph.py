@@ -1,4 +1,4 @@
-from Optimizer.graph import Graph, Vertex
+from graph import Graph, Vertex
 
 class Machine():
     '''
