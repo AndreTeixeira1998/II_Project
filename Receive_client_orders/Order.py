@@ -1,52 +1,44 @@
 import urllib.request
 from html.parser import HTMLParser
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
-
-#   Esta estrutura foi baseada diretamente na estrutura e dados dos ficheiros XML
 #######################################################################################################
 #
-#   Order   ―>order_type
-#       If order_type == Transform
+#   Order   
+#       Transform
+#           ―>order_type
+#           ―>time
 #           ―>number
-#           ―>transform     ―>quantity
-#                           ―>before_type
-#                           ―>after_type
-#                           ―>max_delay
+#           ―>quantity
+#           ―>before_type
+#           ―>after_type
+#           ―>max_delay
 #
-#       If order_type == Unload
+#       Unload
+#           ―>order_type
+#           ―>time
 #           ―>number
-#           ―>unload    ―>quantity
-#                       ―>piece_type
-#                       ―>destination
+#           ―>quantity
+#           ―>piece_type
+#           ―>destination
 #
-#       If order_type == Request_Stores
-#           (No additional attributes)
+#       Request_Stores
+#           ―>order_type
+#           ―>time
+# 
+#       Para obter um atributo basta colocar:
+#   
+#           orderx.get("Nome do atributo") ―> ex: orderx.get("quantity")
+#       (Caso não exista esse tipo de atributo, retorna None)
+#
+#
+#       Para verificar o tipo de ordem há duas maneiras:
+#
+#           isinstance(orderx,  nome da classe) ―> ex: isinstance(orderx,  Transform) 
+#           orderx.get("order_type") == "nome da classe" ―> ex: orderx.get("order_type") == "Transform"
 #
 #######################################################################################################
-
-# Tipos de ordem guardadas como integer
-O_types = {
-    "Transform" : 0,
-    "Unload" : 1,
-    "Request_Stores" : 2
-}
-
-
-class transform:
-    def __init__(self, before_type, after_type, quantity, max_delay):
-        self.before_type = before_type
-        self.after_type = after_type
-        self.quantity = quantity
-        self.max_delay = max_delay
-
-
-class unload:
-    def __init__(self, piece_type, destination, quantity):
-        self.piece_type = piece_type
-        self.destination = destination
-        self.quantity = quantity
-
 
 
 class MLStripper(HTMLParser):
@@ -65,65 +57,11 @@ def strip_tags(html):
     return s.get_data()
 
 
-class order:
-    def __init__(self, order_number, order_type, max_delay = 0, **kwargs):
+class Order:
+    def __init__(self, order_type, max_delay = 0):
         self.order_type = order_type
-        
+        self.time = datetime.now()
 
-        #   Deve ser possivel organizar os tipos de ordem num dicionario associado aos parametros de cada.
-        #   Fica mais fácil de percorrer e mais elegante para ver
-        if order_type == "Transform" and "transform" in kwargs:
-            self.number = order_number
-            self.transform = kwargs["transform"]
-
-        elif order_type == "Unload" and "unload" in kwargs:
-            self.number = order_number
-            self.unload = kwargs["unload"]
-
-        else:
-            pass
-
-        
-    @staticmethod
-    def parse(file_string):
-        # Parses the uml into a structure
-        root = ET.fromstring(file_string)
-
-        # May receive several orders in the same file
-        orders = []
-        for ord in root:
-            if ord.tag == "Order":
-                # sei que é apenas um child que tem por order, mas não estou a ver como fazer sem for, estão à vontade de mudar se conseguirem
-                for child in ord:
-                    order_type = O_types[child.tag]
-                    if order_type == O_types["Transform"]:
-                        order_number = int(ord.attrib["Number"])
-                        max_delay = int(child.get("MaxDelay"))
-                        before_type = int(child.get("From")[1])
-                        after_type = int(child.get("To")[1])
-                        quantity = int(child.get("Quantity"))
-
-                        trans = transform(max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity)
-                        orders.append(order(order_number = order_number, order_type = order_type, transform = trans))
-
-                    elif order_type == O_types["Unload"]:
-                        order_number = int(ord.attrib["Number"])
-                        piece_type = int(child.get("Type")[1])
-                        destination = int(child.get("Destination")[1])
-                        quantity = int(child.get("Quantity"))
-
-                        unl = unload(quantity = quantity, piece_type = piece_type, destination = destination) 
-                        orders.append(order(order_number = order_number, order_type = order_type, unload = unl))
-
-                    elif order_type == O_types["Request_Stores"]:
-                        orders.append(order(order_number = order_number, order_type = order_type))
-
-                    else:
-                        print("Error creating order (No such order type as %s)" % order_type)
-            elif ord.tag == "Request_Stores":
-                order_type = O_types[ord.tag]
-                orders.append(order(order_number = 0, order_type = order_type))
-        return orders
 
     @staticmethod
     def order66():
@@ -132,3 +70,95 @@ class order:
         print(data[2000:len(data)-348]) 
         return data[2000:len(data)-348] 
 
+class Transform(Order):
+    def __init__(self,order_type, order_number, before_type, after_type, quantity, max_delay):
+        super(Transform, self).__init__(order_type)
+        self.order_number = order_number
+        self.before_type = before_type
+        self.after_type = after_type
+        self.quantity = quantity
+        self.max_delay = max_delay
+    
+    def get(self, attribute):
+        if attribute == "order_type":
+            return self.order_type
+        elif attribute == "order_number":
+            return self.order_number
+        elif attribute == "quantity":
+            return self.quantity
+        elif attribute == "before_type":
+            return self.before_type
+        elif attribute == "after_type":
+            return self.after_type
+        elif attribute == "max_delay":
+            return self.max_delay
+        else:
+            return None
+
+
+
+        
+class Unload(Order):
+    def __init__(self, order_type, order_number, piece_type, destination, quantity):
+        super(Unload, self).__init__(order_type)
+        self.order_number = order_number
+        self.piece_type = piece_type
+        self.destination = destination
+        self.quantity = quantity
+
+    def get(self, attribute):
+        if attribute == "order_type":
+            return self.order_type
+        elif attribute == "order_number":
+            return self.order_number
+        elif attribute == "quantity":
+            return self.quantity
+        elif attribute == "piece_type":
+            return self.piece_type
+        elif attribute == "destination":
+            return self.destination
+        else:
+            return None
+
+class Request_Stores(Order):
+    def __init__(self, order_type):
+        super(Request_Stores, self).__init__(order_type)
+    
+    def get(self, attribute):
+        if attribute == "order_type":
+            return self.order_type
+        else:
+            return None
+
+
+def parse(file_string):
+    # Parses the uml into a structure
+    root = ET.fromstring(file_string)
+    # May receive several orders in the same file
+    orders = []
+    for ord in root:
+        if ord.tag == "Order":
+            # sei que é apenas um child que tem por order, mas não estou a ver como fazer sem for, estão à vontade de mudar se conseguirem
+            for child in ord:
+                order_type = child.tag
+                if order_type == "Transform":
+                    order_number = int(ord.attrib["Number"])
+                    max_delay = int(child.get("MaxDelay"))
+                    before_type = int(child.get("From")[1])
+                    after_type = int(child.get("To")[1])
+                    quantity = int(child.get("Quantity"))
+                    orders.append(Transform(order_type = order_type, order_number = order_number, 
+                                    max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity))
+                elif order_type == "Unload":
+                    order_number = int(ord.attrib["Number"])
+                    piece_type = int(child.get("Type")[1])
+                    destination = int(child.get("Destination")[1])
+                    quantity = int(child.get("Quantity"))
+                    orders.append(Unload(order_number = order_number, order_type = order_type,
+                                    quantity = quantity, piece_type = piece_type, destination = destination))
+                else:
+                    print("Error creating order (No such order type as %s)" % order_type)
+        elif ord.tag == "Request_Stores":
+            order_type = ord.tag
+            orders.append(Request_Stores(order_type = order_type))
+    return orders
