@@ -6,6 +6,7 @@
 !.vscode/extensions.json
 *.code-workspace
 
+OPC_UA/opc_client.log
 
 # Local History for Visual Studio Code
 .history/

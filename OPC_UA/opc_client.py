@@ -69,7 +69,7 @@ async def main():
 		#root = client.get_root_node()
 		#program = await root.get_child(['0:Objects', '0:Server', '4:CODESYS Control Win V3 x64', '3:Resources', '4:Application', '3:Programs', '4:PLC_PRG'])
 		#vars = await program.get_children()
-		#var = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]") ###variavel teste
+		var = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]") ###variavel teste
 
 		await asyncio.gather(read(client, var, optimizer), write(client, var, optimizer))
 		
