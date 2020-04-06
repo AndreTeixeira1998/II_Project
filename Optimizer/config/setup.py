@@ -1,8 +1,8 @@
 import pickle
 import sys
 sys.path.insert(0, "..")
-from baby_optimizer import BabyOptimizer
-from transfgraph import TransfGraph, Transform, Machine
+from Optimizer.baby_optimizer import BabyOptimizer
+from Optimizer.transfgraph import TransfGraph, Transform, Machine
 
 #Object instantiation
 optimizer = BabyOptimizer()
@@ -193,5 +193,5 @@ optimizer.add_conveyor_path(46, 47, 1)
 
 optimizer.add_conveyor_path(47, 46, 1)
 
-with open("babyFactory.pickle","wb") as config_pickle:
+with open("babyFactory.pickle", "wb") as config_pickle:
 	pickle.dump(optimizer, config_pickle)
