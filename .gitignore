@@ -9,3 +9,5 @@
 
 # Local History for Visual Studio Code
 .history/
+*.pyc
+.__pychache__/
