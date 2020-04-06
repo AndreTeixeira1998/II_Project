@@ -1,0 +1,76 @@
+SET search_path TO FACTORY;
+
+CREATE TYPE order_state AS ENUM ('active', 'inactive', 'pending', 'cancelled', 'aborted');
+CREATE TYPE piece_state AS ENUM ('pending', 'stored', 'assemblying', 'dispatched');
+
+CREATE TABLE orders(
+    order_id INTEGER PRIMARY KEY,
+    received_time TIMESTAMPTZ DEFAULT (NOW()),
+	start_time TIMESTAMPTZ,
+	end_time TIMESTAMPTZ,
+	maxdelay INTEGER DEFAULT 0,-- é o prazo relativo... se calhar era melhor mudar o nome
+	curr_state ORDER_STATE DEFAULT 'pending'
+);
+
+CREATE TABLE transform_orders(
+	before_type INTEGER NOT NULL,
+	after_type INTEGER NOT NULL,
+	batch_size INTEGER DEFAULT (1),
+	produced INTEGER DEFAULT (0) CHECK (produced <= batch_size)
+)INHERITS (orders);
+
+CREATE TABLE unload_orders(
+	curr_type INTEGER NOT NULL,
+	destination INTEGER NOT NULL, -- DUNNO q tipo por.. fica integer por agr
+	batch_size INTEGER DEFAULT (1),
+	unloaded INTEGER DEFAULT (0) CHECK (unloaded <= batch_size)
+)INHERITS (orders);
+
+CREATE TABLE stock_orders(
+)INHERITS (orders);
+
+
+CREATE TABLE pieces (
+	piece_id serial PRIMARY KEY,
+	piece_type INTEGER NOT NULL,
+	piece_state PIECE_STATE DEFAULT 'pending',
+	associated_order INTEGER REFERENCES orders(order_id)
+);
+
+CREATE TABLE machines(
+	machine_id  SERIAL PRIMARY KEY,
+	machine_type CHAR(1),
+	transformation_cell INTEGER,
+	UNIQUE (machine_type, transformation_cell)
+);
+
+CREATE TABLE transformations(
+	transform_id SERIAL PRIMARY KEY,
+	machine INTEGER REFERENCES machines(machine_id) NOT NULL,
+	tool INTEGER NOT NULL,
+	initial_type INTEGER NOT NULL,
+	final_type INTEGER NOT NULL,
+	duration INTEGER NOT NULL,
+	UNIQUE (machine, tool)
+);
+
+CREATE TABLE operations(
+	op_id SERIAL PRIMARY KEY,
+	piece_id INTEGER REFERENCES pieces(piece_id) NOT NULL,
+	order_id INTEGER REFERENCES orders(order_id) NOT NULL
+);
+CREATE TABLE transform_operations(
+	transform_id INTEGER REFERENCES transformations(transform_id)
+) INHERITS (operations);
+
+
+CREATE TABLE unloading_zones(
+	area_id INTEGER PRIMARY KEY
+);
+
+CREATE TABLE unload_operations(
+	unloading_area INTEGER REFERENCES unloading_zones(area_id),
+	-- uma peça nao pode ser descarregada duas vezes
+	CONSTRAINT byebye_piece UNIQUE (piece_id)
+) INHERITS (operations);
+
