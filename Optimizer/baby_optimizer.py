@@ -57,9 +57,9 @@ class BabyOptimizer:
 
 	def encode(self, trans_path, debug=False):
 		start=1
-		final=[48, 49, 50]
+		final=[2, 49, 50]
 		path=[start]
-		dict= {"Ma": [4,5,6], "Mb": [16,17,18], "Mc":[28,29,30], "end_your_life": final}
+		dict= {"Ma": [4,16,28], "Mb": [5,17,30], "Mc":[6,18,30], "end_your_life": final}
 		
 		for trans in trans_path:
 			encoded= dict[str(trans.machine)][0]
@@ -72,10 +72,6 @@ class BabyOptimizer:
 		print(path)
 		return path
 		
-	
-	def decode():
-		pass
-	
 
 
 	def compute_path(self, trans_path, search=dijkstra_conveyors, debug=False):
