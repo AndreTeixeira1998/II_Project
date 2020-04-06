@@ -1,4 +1,4 @@
-from graph import Graph, Vertex
+from Optimizer.graph import Graph, Vertex
 
 
 class Conveyor(Vertex):

@@ -2,6 +2,7 @@ import asyncio
 import sys
 sys.path.insert(0, "..")
 import logging
+import pickle
 
 from asyncua import Client, Node, ua
 from subhandles import OptimizerSubHandler
@@ -19,24 +20,31 @@ _logger = logging.getLogger('asyncua')
 async def write_int16(var, value):
 	datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
 	await var.write_value(datavalue)
+
+async def write_array_int16(array, value):
+	dataarray = ua.DataValue(ua.Variant(array, ua.VariantType.Int16))
+	await array.write_value(dataarray)
 	
 
-async def write(client, vars, optimizer):
+async def write(client, var, optimizer):
 	print("######################debug: write() started")
 	
-	#var = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.PLC_PRG.int_var") ###variavel teste
 	
-	var = vars[1] ### testar com o primeiro da lista para implementar indices
+	duration, piece, trans_path = optimizer.compute_transform("P2", "P5")
+	
+	path_to_write = optimizer.compute_path(trans_path)
+	
+	 ### testar com o primeiro da lista para implementar indices
 	
 	while True:
 
 			await asyncio.sleep(5)
 			
-			try:
-				print("###############################    Changing Value!   ###########################")
-				await write_int16(var, 3) # set node value using implicit data type
-			except:
-				print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+			#try:
+			print("###############################    Changing Value!   ###########################")
+			await write_array_int16(var, path_to_write) # set node value using implicit data type
+			#except:
+			#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	
 
@@ -53,13 +61,17 @@ async def read(client, vars, optimizer):
 
 async def main():
 	url = 'opc.tcp://localhost:4840/'
-	optimizer = BabyOptimizer()
+	#Load optimizer configs from a pickle
+	with open("babyFactory.pickle","rb") as config_pickle:
+		optimizer = pickle.load(config_pickle)
+	
 	async with Client(url=url) as client:
-		root = client.get_root_node()
-		program = await root.get_child(['0:Objects', '0:Server', '4:CODESYS Control Win V3 x64', '3:Resources', '4:Application', '3:Programs', '4:PLC_PRG'])
-		vars = await program.get_children()
+		#root = client.get_root_node()
+		#program = await root.get_child(['0:Objects', '0:Server', '4:CODESYS Control Win V3 x64', '3:Resources', '4:Application', '3:Programs', '4:PLC_PRG'])
+		#vars = await program.get_children()
+		var = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]") ###variavel teste
 		 
-		await asyncio.gather(read(client, vars, optimizer), write(client, vars, optimizer))
+		await asyncio.gather(read(client, var, optimizer), write(client, var, optimizer))
 		
 
 		#Runs for 1 min

@@ -1,9 +1,9 @@
 import time
 import pickle
-from transfgraph import TransfGraph, Transform, Machine
-from search import dijkstra
-from pathing.pathgraph import Conveyor, PathGraph
-from pathing.dijkstra import dijkstra_conveyors
+from Optimizer.transfgraph import TransfGraph, Transform, Machine
+from Optimizer.search import dijkstra
+from Optimizer.pathing.pathgraph import Conveyor, PathGraph
+from Optimizer.pathing.dijkstra import dijkstra_conveyors
 
 
 class BabyOptimizer:
@@ -69,7 +69,7 @@ class BabyOptimizer:
 			path.append(encoded)
 		
 		path.append(dict["end_your_life"][0])
-		print(path)
+		#print(path)
 		return path
 		
 
@@ -96,8 +96,8 @@ class BabyOptimizer:
 		
 	
 		if debug:
-			print("\n\nShortest FINAL path {}, ETA = {} s".format([piece.id for piece in final_path], final_duration))
-	
+			print("\n\nShortest FINAL path {}, ETA = {} s".format([conveyor.id for conveyor in final_path], final_duration))
+		return [conveyor.id for conveyor in final_path]
 			
 	def compute_conveyor(self, frm : str, to : str, search=dijkstra_conveyors, debug=False):
 	
