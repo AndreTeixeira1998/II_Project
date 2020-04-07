@@ -16,9 +16,35 @@ logging.basicConfig(level=logging.DEBUG, filename=LOG_FILENAME)
 _logger = logging.getLogger('asyncua')
 
 
+class piece():
+    '''
+
+    '''
+    def __init__(self, id, var, optimizer):
+        self.id = id
+		self.var=var
+		self.optimizer=optimizer
+        self.waiting_time = 0
+
+    def __str__(self):
+        return self.id
+		
+	async def write_int16(self, var, value):
+		datavalue = ua.DataValue(ua.Variant(self.value, ua.VariantType.Int16))
+		await var.write_value(datavalue)
+
+	async def write_bool(self, var, value):
+		datavalue = ua.DataValue(ua.Variant(self.value, ua.VariantType.Boolean))
+		await var.write_value(datavalue)
+
+
 
 async def write_int16(var, value):
 	datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
+	await var.write_value(datavalue)
+
+async def write_bool(var, value):
+	datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
 	await var.write_value(datavalue)
 
 async def write_array_int16(array, value):
