@@ -3,11 +3,10 @@ import sys
 sys.path.insert(0, "..")
 import logging
 import pickle
-
+import numpy as np
 from asyncua import Client, Node, ua
 from subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
-
 
 SUB_PERIOD = 20 #Publishing interval in miliseconds
 LOG_FILENAME = 'opc_client.log'
@@ -41,6 +40,7 @@ class Piece():
 	def compute_conveyor(self, before, after):
 		duration, piece, trans_path = self.optimizer.compute_transform(before, after)
 		path_to_write = self.optimizer.compute_path(trans_path)
+		path_to_write.extend(np.zeros(51-len(path_to_write), dtype=int))
 		return path_to_write
 
 
@@ -67,6 +67,10 @@ async def write(client, var, optimizer):
 	
 	path_to_write = optimizer.compute_path(trans_path)
 	
+	print(path_to_write)
+	path_to_write.extend(np.zeros(51-len(path_to_write), dtype=int))
+	print(len(path_to_write))
+	print(path_to_write)
 	 ### testar com o primeiro da lista para implementar indices
 	
 	while True:
