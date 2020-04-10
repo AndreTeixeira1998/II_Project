@@ -61,7 +61,7 @@ class DB_handler:
                 values.append(vals)
         Query = Query[:-1] + ") VALUES ("
 
-        for x in range(count_args):
+        for _ in range(count_args):
            Query = Query + "%s,"
         Query = Query[:-1] + ")"
 

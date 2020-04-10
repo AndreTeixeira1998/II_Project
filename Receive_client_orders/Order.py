@@ -67,11 +67,11 @@ class Order:
     def order66():
         page = urllib.request.urlopen('https://www.imsdb.com/scripts/Star-Wars-Revenge-of-the-Sith.html').read()
         data = strip_tags(page.decode("cp1252"))
-        print(data[2000:len(data)-348]) 
-        return data[2000:len(data)-348] 
+        print(data[2000:len(data)-348])
+        return data[2000:len(data)-348]
 
 class Transform(Order):
-    def __init__(self,order_type, order_number, before_type, after_type, quantity, max_delay):
+    def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay):
         super(Transform, self).__init__(order_type)
         self.order_number = order_number
         self.before_type = before_type
@@ -82,7 +82,7 @@ class Transform(Order):
     def get(self, attribute):
         if attribute == "order_type":
             return self.order_type
-        elif attribute == "order_number":
+        elif attribute in "order_number":
             return self.order_number
         elif attribute == "quantity":
             return self.quantity
@@ -109,7 +109,7 @@ class Unload(Order):
     def get(self, attribute):
         if attribute == "order_type":
             return self.order_type
-        elif attribute == "order_number":
+        elif attribute in "order_number":
             return self.order_number
         elif attribute == "quantity":
             return self.quantity
@@ -144,15 +144,15 @@ def parse(file_string):
                 if order_type == "Transform":
                     order_number = int(ord.attrib["Number"])
                     max_delay = int(child.get("MaxDelay"))
-                    before_type = int(child.get("From")[1])
-                    after_type = int(child.get("To")[1])
+                    before_type = child.get("From")
+                    after_type = child.get("To")
                     quantity = int(child.get("Quantity"))
                     orders.append(Transform(order_type = order_type, order_number = order_number, 
                                     max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity))
                 elif order_type == "Unload":
                     order_number = int(ord.attrib["Number"])
-                    piece_type = int(child.get("Type")[1])
-                    destination = int(child.get("Destination")[1])
+                    piece_type = child.get("Type")[1]
+                    destination = child.get("Destination")
                     quantity = int(child.get("Quantity"))
                     orders.append(Unload(order_number = order_number, order_type = order_type,
                                     quantity = quantity, piece_type = piece_type, destination = destination))
