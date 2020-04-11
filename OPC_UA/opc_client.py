@@ -34,31 +34,22 @@ class Piece():
 		datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
 		await var.write_value(datavalue)
 
+	async def write_array_int16(self, var, array, Array_LENGTH):
+		array.extend(np.zeros(Array_LENGTH-len(array), dtype=int))
+		datavalue = ua.DataValue(ua.Variant(array, ua.VariantType.Int16))
+		await var.write_value(datavalue)
+
 	async def write_bool(self, var, value):
 		datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
 		await var.write_value(datavalue)
 
-	def update_path(self, before, after, Array_LENGTH):
+	def update_path(self, before, after):
 		duration, piece, trans_path = self.optimizer.compute_transform(before, after)
 		path_to_write = self.optimizer.compute_path(trans_path)
-		path_to_write.extend(np.zeros(Array_LENGTH-len(path_to_write), dtype=int))
 		return duration, piece, trans_path, path_to_write
 
 
-'''
-async def write_int16(var, value):
-	#	datavalue = ua.DataValue(ua._val_to_variant(value, Int16))
-	datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
-	await var.write_value(datavalue)
 
-async def write_bool(var, value):
-	datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
-	await var.write_value(datavalue)
-
-async def write_array_int16(array, value):
-	dataarray = ua.DataValue(ua.Variant(array, ua.VariantType.Int16))
-	await array.write_value(dataarray)
-	'''
 ########################################## Isto não deveria estar aqui ################################################
 def order_handler(order):
 	if order.get("order_type") == "Request_Stores":
@@ -87,7 +78,7 @@ async def write(client, vars, optimizer, q_udp_in):
 	path_length=51
 	transf_legth=6
 	
-	p=Piece(1, optimizer)
+	id=1
 	
 	while True:
 	
@@ -102,16 +93,17 @@ async def write(client, vars, optimizer, q_udp_in):
 		for order in orders_client:
 			### No final vai ter que se fazer pop à order, esqueci-me, upsie daisy
 			pieces = order_handler(order)
-			#p = Piece(1, optimizer)
+			p = Piece(id, optimizer)
+			id+=1
 			for piece in pieces:
 
 
-				_, _, _, path_to_write =p.update_path(piece[0], piece[1], path_length)
+				_, _, _, path_to_write =p.update_path(piece[0], piece[1])
 		
 				await asyncio.sleep(5)
 				#try:
 				print("###############################    Changing Value!   ###############################")
-				await p.write_int16(var_path, path_to_write) # set node value using implicit data type
+				await p.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
 				await p.write_int16(var_id, p.id) # set node value using implicit data type
 		
 				#except:
