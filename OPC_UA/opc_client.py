@@ -22,9 +22,8 @@ class Piece():
 	Há de fazer grandes coisas esta classe
 
 	'''
-	def __init__(self, id, var, optimizer):
+	def __init__(self, id, optimizer):
 		self.id = id
-		self.var = var
 		self.optimizer=optimizer
 		self.waiting_time = 0
 
@@ -39,14 +38,14 @@ class Piece():
 		datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
 		await var.write_value(datavalue)
 
-	def compute_conveyor(self, before, after):
+	def update_path(self, before, after, Array_LENGTH):
 		duration, piece, trans_path = self.optimizer.compute_transform(before, after)
 		path_to_write = self.optimizer.compute_path(trans_path)
-		path_to_write.extend(np.zeros(51-len(path_to_write), dtype=int))
-		return path_to_write
+		path_to_write.extend(np.zeros(Array_LENGTH-len(path_to_write), dtype=int))
+		return duration, piece, trans_path, path_to_write
 
 
-
+'''
 async def write_int16(var, value):
 	#	datavalue = ua.DataValue(ua._val_to_variant(value, Int16))
 	datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
@@ -59,7 +58,7 @@ async def write_bool(var, value):
 async def write_array_int16(array, value):
 	dataarray = ua.DataValue(ua.Variant(array, ua.VariantType.Int16))
 	await array.write_value(dataarray)
-	
+	'''
 ########################################## Isto não deveria estar aqui ################################################
 def order_handler(order):
 	if order.get("order_type") == "Request_Stores":
@@ -74,13 +73,26 @@ def order_handler(order):
 	return pieces
 #######################################################################################################################
 
-async def write(client, var, optimizer, q_udp_in):
+async def write(client, vars, optimizer, q_udp_in):
 	print("######################debug: write() started")
+	
 	orders_client = []
+	
+	var_id= await vars.get_child("4:id")
+	var_path = await vars.get_child("4:path")
+	var_maq = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].transf.maq")
+	var_tool = 1
+	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
+	
+	path_length=51
+	transf_legth=6
+	
+	p=Piece(1, optimizer)
+	
 	while True:
 	
 		########################################## Isto não deveria estar aqui ################################################
-		
+
 		while not q_udp_in.empty():
 			order = q_udp_in.get()
 			for o in order:
@@ -90,22 +102,18 @@ async def write(client, var, optimizer, q_udp_in):
 		for order in orders_client:
 			### No final vai ter que se fazer pop à order, esqueci-me, upsie daisy
 			pieces = order_handler(order)
-			#p = Piece(1, var, optimizer)
+			#p = Piece(1, optimizer)
 			for piece in pieces:
-				duration, piece, trans_path = optimizer.compute_transform(piece[0], piece[1])
 
-				path_to_write = optimizer.compute_path(trans_path)
 
-				print(path_to_write)
-				path_to_write.extend(np.zeros(51-len(path_to_write), dtype=int))
-				print(len(path_to_write))
-				print(path_to_write)
-				 ### testar com o primeiro da lista para implementar indices
-
+				_, _, _, path_to_write =p.update_path(piece[0], piece[1], path_length)
+		
 				await asyncio.sleep(5)
 				#try:
 				print("###############################    Changing Value!   ###############################")
-				await write_int16(var, path_to_write) # set node value using implicit data type
+				await p.write_int16(var_path, path_to_write) # set node value using implicit data type
+				await p.write_int16(var_id, p.id) # set node value using implicit data type
+		
 				#except:
 				#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
@@ -124,19 +132,26 @@ async def read(client, vars, optimizer):
 
 async def main(q_udp_in):
 	url = 'opc.tcp://localhost:4840/'
+	
 	#Load optimizer configs from a pickle
 	################################################## Mudar esta path de merda que eu não percebo esta merda não funcionar na path relativa, jeeeez #########################
 	#with open("C:/Users/User/Desktop/II/II_project/II_Project/Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
-	with open("../Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
+	with open("./Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
 		optimizer = pickle.load(config_pickle)
 	
 	async with Client(url=url) as client:
 		#root = client.get_root_node()
-		#program = await root.get_child(['0:Objects', '0:Server', '4:CODESYS Control Win V3 x64', '3:Resources', '4:Application', '3:Programs', '4:PLC_PRG'])
+		#program = await root.get_child(['0:Objects', '0:Server', '4:CODESYS Control Win V3 x64', '3:Resources', '4:Application','3:GlobalVars', '4:GVL', '4:piece_array'])
 		#vars = await program.get_children()
-		var = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].path") ###variavel teste
-
-		await asyncio.gather(read(client, var, optimizer), write(client, var, optimizer, q_udp_in))
+		
+		vars_to_write = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]") 
+		vars_to_read = await vars_to_write.get_children()
+		#vars_to_read = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].transf.maq")
+		#vars = await vars.get_child("4:path")
+		#var2=client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
+		
+		
+		await asyncio.gather(read(client, vars_to_read, optimizer), write(client, vars_to_write, optimizer, q_udp_in))
 		
 
 		#Runs for 1 min
@@ -144,7 +159,8 @@ async def main(q_udp_in):
 		await asyncio.sleep(100)
 
 if __name__ == '__main__':
+	q_udp_in=1
 	loop = asyncio.get_event_loop()
 	loop.set_debug(True)
-	loop.run_until_complete(main())
+	loop.run_until_complete(main(q_udp_in))
 	loop.close()

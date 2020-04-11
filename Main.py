@@ -5,7 +5,7 @@ from queue import Queue
 from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
-from db.db_handler import *
+#from db.db_handler import *
 
 def order_into_pieces(order:Order):
 	if order.get("order_type") == "Transform":		
