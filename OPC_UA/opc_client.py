@@ -19,7 +19,7 @@ _logger = logging.getLogger('asyncua')
 
 class Piece():
 	'''
-	Há de fazer grandes coisas esta classe
+	Classe Piece deveria ser importada mas sou lazy as **** 
 
 	'''
 	def __init__(self, id, optimizer):
@@ -76,7 +76,7 @@ async def write(client, vars, optimizer, q_udp_in):
 	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
 	
 	path_length=51
-	transf_legth=6
+	transf_length=6
 	
 	id=1
 	
@@ -101,13 +101,13 @@ async def write(client, vars, optimizer, q_udp_in):
 				_, _, _, path_to_write =p.update_path(piece[0], piece[1])
 		
 				await asyncio.sleep(5)
-				#try:
-				print("###############################    Changing Value!   ###############################")
-				await p.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
-				await p.write_int16(var_id, p.id) # set node value using implicit data type
+				try:
+					print("###############################    Changing Value!   ###############################")
+					await p.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
+					await p.write_int16(var_id, p.id) # set node value using implicit data type
 		
-				#except:
-				#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+				except:
+					print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	
 
@@ -126,22 +126,14 @@ async def main(q_udp_in):
 	url = 'opc.tcp://localhost:4840/'
 	
 	#Load optimizer configs from a pickle
-	################################################## Mudar esta path de merda que eu não percebo esta merda não funcionar na path relativa, jeeeez #########################
-	#with open("C:/Users/User/Desktop/II/II_project/II_Project/Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
 	with open("./Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
 		optimizer = pickle.load(config_pickle)
 	
 	async with Client(url=url) as client:
-		#root = client.get_root_node()
-		#program = await root.get_child(['0:Objects', '0:Server', '4:CODESYS Control Win V3 x64', '3:Resources', '4:Application','3:GlobalVars', '4:GVL', '4:piece_array'])
-		#vars = await program.get_children()
-		
+
 		vars_to_write = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]") 
 		vars_to_read = await vars_to_write.get_children()
-		#vars_to_read = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].transf.maq")
-		#vars = await vars.get_child("4:path")
-		#var2=client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
-		
+
 		
 		await asyncio.gather(read(client, vars_to_read, optimizer), write(client, vars_to_write, optimizer, q_udp_in))
 		
@@ -151,6 +143,7 @@ async def main(q_udp_in):
 		await asyncio.sleep(100)
 
 if __name__ == '__main__':
+	#para testar nao esquecer de alterar path do config de . para ..
 	q_udp_in=1
 	loop = asyncio.get_event_loop()
 	loop.set_debug(True)
