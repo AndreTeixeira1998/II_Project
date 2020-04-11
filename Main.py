@@ -16,16 +16,17 @@ def order_into_pieces(order:Order):
 	# return pieces
 
 
-def order_handler():
-
-	raise NotImplementedError
 
 def int_threading():
 	raise NotImplementedError
 
 def run(q_udp_in):
 	
-	loop = asyncio.get_event_loop()
+	# loop = asyncio.get_event_loop()
+	#	Para multi thrading...acho
+	#	https://stackoverflow.com/questions/46727787/runtimeerror-there-is-no-current-event-loop-in-thread-in-async-apscheduler
+	loop = asyncio.new_event_loop() 
+	asyncio.set_event_loop(loop)
 	loop.set_debug(True)
 	loop.run_until_complete(main(q_udp_in))
 	loop.close()

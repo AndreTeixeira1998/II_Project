@@ -7,7 +7,7 @@ import logging
 import pickle
 import numpy as np
 from asyncua import Client, Node, ua
-from subhandles import OptimizerSubHandler
+from OPC_UA.subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
 
 SUB_PERIOD = 20 #Publishing interval in miliseconds
@@ -88,6 +88,7 @@ async def write(client, var, optimizer, q_udp_in):
 		#######################################################################################################################
 
 		for order in orders_client:
+			### No final vai ter que se fazer pop à order, esqueci-me, upsie daisy
 			pieces = order_handler(order)
 			#p = Piece(1, var, optimizer)
 			for piece in pieces:
@@ -124,7 +125,9 @@ async def read(client, vars, optimizer):
 async def main(q_udp_in):
 	url = 'opc.tcp://localhost:4840/'
 	#Load optimizer configs from a pickle
-	with open("../Optimizer/config/babyFactory.pickle", "rb") as config_pickle:
+	################################################## Mudar esta path de merda que eu não percebo esta merda não funcionar na path relativa, jeeeez #########################
+	#with open("C:/Users/User/Desktop/II/II_project/II_Project/Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
+	with open("../Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
 		optimizer = pickle.load(config_pickle)
 	
 	async with Client(url=url) as client:
