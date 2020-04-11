@@ -1,5 +1,7 @@
 import asyncio
 import sys
+from queue import Queue
+
 sys.path.insert(0, "..")
 import logging
 import pickle
@@ -58,30 +60,53 @@ async def write_array_int16(array, value):
 	dataarray = ua.DataValue(ua.Variant(array, ua.VariantType.Int16))
 	await array.write_value(dataarray)
 	
+########################################## Isto não deveria estar aqui ################################################
+def order_handler(order):
+	if order.get("order_type") == "Request_Stores":
+		return None
+	else: 
+		pieces = []
+		count = 0
+		while count != order.get("quantity"):
+			p = [order.get("before_type"), order.get("after_type")]
+			pieces.append(p)
+			count += 1
+	return pieces
+#######################################################################################################################
 
-async def write(client, var, optimizer):
+async def write(client, var, optimizer, q_udp_in):
 	print("######################debug: write() started")
-	
-	p = Piece(1, var, optimizer)
-	duration, piece, trans_path = optimizer.compute_transform("P2", "P5")
-	
-	path_to_write = optimizer.compute_path(trans_path)
-	
-	print(path_to_write)
-	path_to_write.extend(np.zeros(51-len(path_to_write), dtype=int))
-	print(len(path_to_write))
-	print(path_to_write)
-	 ### testar com o primeiro da lista para implementar indices
-	
+	orders_client = []
 	while True:
+	
+		########################################## Isto não deveria estar aqui ################################################
+		
+		while not q_udp_in.empty():
+			order = q_udp_in.get()
+			for o in order:
+				orders_client.append(o)
+		#######################################################################################################################
 
-			await asyncio.sleep(5)
-			
-			#try:
-			print("###############################    Changing Value!   ###########################")
-			await write_int16(var, path_to_write) # set node value using implicit data type
-			#except:
-			#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		for order in orders_client:
+			pieces = order_handler(order)
+			#p = Piece(1, var, optimizer)
+			for piece in pieces:
+				duration, piece, trans_path = optimizer.compute_transform(piece[0], piece[1])
+
+				path_to_write = optimizer.compute_path(trans_path)
+
+				print(path_to_write)
+				path_to_write.extend(np.zeros(51-len(path_to_write), dtype=int))
+				print(len(path_to_write))
+				print(path_to_write)
+				 ### testar com o primeiro da lista para implementar indices
+
+				await asyncio.sleep(5)
+				#try:
+				print("###############################    Changing Value!   ###############################")
+				await write_int16(var, path_to_write) # set node value using implicit data type
+				#except:
+				#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	
 
@@ -96,7 +121,7 @@ async def read(client, vars, optimizer):
 
 
 
-async def main():
+async def main(q_udp_in):
 	url = 'opc.tcp://localhost:4840/'
 	#Load optimizer configs from a pickle
 	with open("../Optimizer/config/babyFactory.pickle", "rb") as config_pickle:
@@ -108,7 +133,7 @@ async def main():
 		#vars = await program.get_children()
 		var = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].path") ###variavel teste
 
-		await asyncio.gather(read(client, var, optimizer), write(client, var, optimizer))
+		await asyncio.gather(read(client, var, optimizer), write(client, var, optimizer, q_udp_in))
 		
 
 		#Runs for 1 min
