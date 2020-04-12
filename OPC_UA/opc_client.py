@@ -74,6 +74,7 @@ async def write(client, vars, optimizer, q_udp_in):
 	var_maq = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].transf.maq")
 	var_tool = 1
 	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
+	var_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].tipo_atual")
 	
 	path_length=51
 	transf_length=6
@@ -105,6 +106,8 @@ async def write(client, vars, optimizer, q_udp_in):
 					print("###############################    Changing Value!   ###############################")
 					await p.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
 					await p.write_int16(var_id, p.id) # set node value using implicit data type
+					#await p.write_bool(var_new_piece, True)
+					#await p.write_int16(var_tipo_atual, 1)
 		
 				except:
 					print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
