@@ -9,13 +9,30 @@ port = 54321
 buf = 1024
 addr = (host,port)
 
-def order_receive(out_q, notify_new_order = False):
+
+def answer_request(request):
+	s = socket(AF_INET, # Internet
+                SOCK_DGRAM) # UDP
+	
+	message = request.create_xml()
+	# bytesToSend = str.encode(message)  #	Não deve ser preciso, já deve estar em binário
+	s.sendto(message,(request.get("address"),request.get("port")))
+	
+
+def order_receive(out_q, db = None, notify_new_order = False):
 	s = socket(AF_INET,SOCK_DGRAM)
 	s.bind((host,port))
 
 	while True:
-		data,_ = s.recvfrom(buf)
-		received_orders = parse(data)
+		data,addr_port = s.recvfrom(buf)
+		received_orders = parse(data, addr_port[0], addr_port[1], db)
+		for index,rec in enumerate(received_orders):
+			if rec.get("order_type") == "Request_Stores":
+				if notify_new_order == True:
+					print("Send to", rec.get("address"), rec.get("port"))
+				answer_request(rec)
+				del received_orders[index]
+
 		out_q.put(received_orders)
 		if notify_new_order == True:
 			for ord in received_orders:
@@ -48,4 +65,5 @@ def _run_example():
     
 if __name__ == "__main__":
 	import time
+	from Order import Order, Transform, Unload, Request_Stores, parse
 	_run_example()
