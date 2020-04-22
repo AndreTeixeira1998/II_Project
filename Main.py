@@ -5,7 +5,7 @@ from queue import Queue
 from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
-#from db.db_handler import *
+from db.db_handler import *
 
 def order_into_pieces(order:Order):
 	if order.get("order_type") == "Transform":		
@@ -34,9 +34,10 @@ def run(q_udp_in):
 #	https://docs.python.org/3.8/library/signal.html
 #	https://docs.python.org/3/library/asyncio-queue.html
 if __name__ == "__main__":
-	
+	db = DB_handler()
+
 	q_udp = Queue()
-	t_order_rec = Thread(target = order_receive, args = (q_udp, ))
+	t_order_rec = Thread(target = order_receive, args = (q_udp, db, ))
 	t_path_finder = Thread(target = run, args = (q_udp, ))
 
 	t_order_rec.start()
