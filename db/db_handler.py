@@ -19,7 +19,7 @@ class DB_handler:
             record = self._cursor.fetchone()
             print("You are connected to - ", record,"\n")
 
-            self.tables = ("orders", "transform_orders", "unload_orders", "stock_orders", "pieces", "machines", "transformations", "operations", "transform_operations", "unloading_zones", "unload_operations")
+            self.tables = ("pieces", "transform_orders", "unload_orders", "stock_orders", "orders", "operations","machines", "transformations", "transform_operations", "unloading_zones", "unload_operations")
 
         except(Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error) 
@@ -38,11 +38,19 @@ class DB_handler:
             self._connection.close()
             print("Database connection closed")
     
+
+
     def delete_all_content(self, tables_to_delete = None):
-        """Apaga o conteudo das tabelas indicadas, se vazio, apaga todas"""
-        for table in tables_to_delete:
-            self._cursor.execute("DELETE FROM factory." + table)
-            self._connection.commit()
+        """Apaga o conteudo das tabelas indicadas, se vazio, apaga todas
+        ################# Há problemas com as dependências, é preciso ser revisto ##################"""
+        if tables_to_delete == None:
+            for table in self.tables:
+                self._cursor.execute("DELETE FROM factory." + table)
+                self._connection.commit()
+        for table in self.tables:
+            if table in tables_to_delete:
+                self._cursor.execute("DELETE FROM factory." + table)
+                self._connection.commit()
 
     def insert(self, table, **kwargs):
         """Insere na tabela os valores dados. 
@@ -135,3 +143,15 @@ class DB_handler:
                     line += str(column) + "\t\t"
                 print(line)
         return data
+
+    def count_pieces(self):
+        """Retorna o numero de peças no armazem por cada tipo de peças num vetor ordena
+        """
+        counted = [0] * 9
+        for index, _ in enumerate(counted, start = 1):
+            Query = "SELECT COUNT(piece_type) FROM factory.pieces WHERE piece_type = %s AND piece_state = %s"
+            self._cursor.execute(Query, (index,"stored",))
+            data = self._cursor.fetchall()
+            counted[index - 1] = data[0][0]
+
+        return counted
