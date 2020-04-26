@@ -10,7 +10,10 @@ from db.db_handler import DB_handler
 #######################################################################################################
 #
 #   Order   
-#	   Transform
+#		―>order_type
+#		―>time	(might not be usable)
+#
+#		Transform (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>number
@@ -19,7 +22,7 @@ from db.db_handler import DB_handler
 #		   ―>after_type
 #		   ―>max_delay
 #
-#	   Unload
+#	   Unload (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>number
@@ -27,7 +30,7 @@ from db.db_handler import DB_handler
 #		   ―>piece_type
 #		   ―>destination
 #
-#	   Request_Stores
+#	   Request_Stores (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>address
@@ -86,17 +89,19 @@ class Transform(Order):
 		self.quantity = quantity
 		self.max_delay = max_delay
 
+		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		if self._db != None:
 			self._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay, 
 												   before_type = int(self.before_type[1]), after_type = int(self.after_type[1]), batch_size = self.quantity)
-#
-#
-#	def __exit__(self):
-#		
-#
-#
-#
-#
+
+#	Implementar função para dar conta do termino de uma ordem na destruição do objeto
+	def __del__(self):
+		pass
+		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
+		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
+		if self._db != None:
+			self._db.update(table = "transform_orders", where = "order_id", condition = self.order_number, curr_state = "processed")
+
 
 	def get(self, attribute):
 		if attribute == "order_type":
@@ -125,13 +130,18 @@ class Unload(Order):
 		self.destination = destination
 		self.quantity = quantity
 
+		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		if self._db != None:
 			self._db.insert(table = "unload_orders", order_id = self.order_number, 
 												   destination = self.destination, curr_type = int(self.piece_type[1]), batch_size = self.quantity)
-#
-#
-#	def __exit__(self):
-#		
+
+#	Implementar função para dar conta do termino de uma ordem na destruição do objeto
+	def __del__(self):
+		pass
+		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
+		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
+		if self._db != None:
+			self._db.update(table = "unload_orders", where = "order_id", condition = self.order_number, curr_state = "processed")
 
 	def get(self, attribute):
 		if attribute == "order_type":
