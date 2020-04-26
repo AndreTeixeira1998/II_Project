@@ -17,15 +17,22 @@ logging.basicConfig(level=logging.DEBUG, filename=LOG_FILENAME)
 _logger = logging.getLogger('asyncua')
 
 
+#Some Global Vars
+path_length=51
+transf_length=6	
+ 
+
+
 class Piece():
 	'''
 	Classe Piece deveria ser importada mas sou lazy as **** 
 
 	'''
-	def __init__(self, id, optimizer):
+	def __init__(self, id, optimizer, order):
 		self.id = id
 		self.optimizer=optimizer
 		self.waiting_time = 0
+		self.order=order
 
 	def __str__(self):
 		return self.id
@@ -43,9 +50,17 @@ class Piece():
 		datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
 		await var.write_value(datavalue)
 
-	def update_path(self, before, after):
-		duration, piece, trans_path = self.optimizer.compute_transform(before, after)
+	async def update_path(self, var_id, var_path, var_maq, var_tool, var_new_piece, var_tipo_atual):
+		duration, piece, trans_path = self.optimizer.compute_transform(self.order.get("before_type"), self.order.get("after_type"))
 		path_to_write = self.optimizer.compute_path(trans_path)
+		
+		await self.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
+		await self.write_int16(var_id, self.id) # set node value using implicit data type
+		await self.write_int16(var_tipo_atual, 1)
+		await self.write_array_int16(var_maq, [1], transf_length)
+		await self.write_array_int16(var_tool, [1], transf_length)
+		await self.write_bool(var_new_piece, True)
+		
 		return duration, piece, trans_path, path_to_write
 
 
@@ -76,9 +91,6 @@ async def write(client, vars, optimizer, q_udp_in):
 	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
 	var_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].tipo_atual")
 	
-	path_length=51
-	transf_length=6
-	
 	id=1
 	
 	while True:
@@ -91,28 +103,15 @@ async def write(client, vars, optimizer, q_udp_in):
 				orders_client.append(o)
 		#######################################################################################################################
 
-		for order in orders_client:
-			### No final vai ter que se fazer pop à order, esqueci-me, upsie daisy
-			pieces = order_handler(order)
-			p = Piece(id, optimizer)
+		for order in orders_client:	
+
+			await asyncio.sleep(5)
+			#try:
+			print("###############################    Changing Value!   ###############################")
+			_, _, _, path_to_write = await Piece(id, optimizer, order).update_path(var_id, var_path, var_maq, var_tool, var_new_piece, var_tipo_atual)
 			id+=1
-			for piece in pieces:
-
-
-				_, _, _, path_to_write =p.update_path(piece[0], piece[1])
-		
-				await asyncio.sleep(5)
-				try:
-					print("###############################    Changing Value!   ###############################")
-					await p.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
-					await p.write_int16(var_id, p.id) # set node value using implicit data type
-					await p.write_int16(var_tipo_atual, 1)
-					await p.write_array_int16(var_maq, [1], transf_length)
-					await p.write_array_int16(var_tool, [1], transf_length)
-					await p.write_bool(var_new_piece, True)
-					
-				except:
-					print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+			#except:		
+			#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	
 
