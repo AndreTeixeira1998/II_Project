@@ -25,17 +25,19 @@ optimizer.add_machine('Mc')
 
 #Specifying all transforms available
 optimizer.add_transform('P1', 'P2', Transform(optimizer.machines['Ma'], 'T1', 15))
-optimizer.add_transform('P1', 'P3', Transform(optimizer.machines['Mb'], 'T2', 20))
-optimizer.add_transform('P1', 'P4', Transform(optimizer.machines['Mc'], 'T1', 10))
 optimizer.add_transform('P2', 'P3', Transform(optimizer.machines['Ma'], 'T1', 15))
 optimizer.add_transform('P2', 'P6', Transform(optimizer.machines['Ma'], 'T2', 15))
+optimizer.add_transform('P6', 'P9', Transform(optimizer.machines['Ma'], 'T3', 15))
+optimizer.add_transform('P1', 'P3', Transform(optimizer.machines['Mb'], 'T2', 20))
 optimizer.add_transform('P3', 'P4', Transform(optimizer.machines['Mb'], 'T1', 15))
+optimizer.add_transform('P3', 'P7', Transform(optimizer.machines['Mb'], 'T2', 20))
+optimizer.add_transform('P7', 'P9', Transform(optimizer.machines['Mb'], 'T3', 20))
+optimizer.add_transform('P1', 'P4', Transform(optimizer.machines['Mc'], 'T1', 10))
 optimizer.add_transform('P4', 'P5', Transform(optimizer.machines['Mc'], 'T1', 30))
 optimizer.add_transform('P4', 'P8', Transform(optimizer.machines['Mc'], 'T2', 10))
-optimizer.add_transform('P3', 'P7', Transform(optimizer.machines['Mb'], 'T2', 20))
-optimizer.add_transform('P6', 'P9', Transform(optimizer.machines['Ma'], 'T3', 15))
-optimizer.add_transform('P8', 'P9', Transform(optimizer.machines['Mc'], 'T3', 30))
-optimizer.add_transform('P7', 'P9', Transform(optimizer.machines['Mb'], 'T3', 20))
+optimizer.add_transform('P8', 'P9', Transform(optimizer.machines['Mc'], 'T3', 10))
+#Transformacao extra
+#optimizer.add_transform('P8', 'P7', Transform(optimizer.machines['Ma'], 'T2', 30))
 
 for i in range(50):
 	optimizer.add_conveyor(i+1)

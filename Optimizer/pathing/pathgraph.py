@@ -1,6 +1,5 @@
 from Optimizer.graph import Graph, Vertex
 
-
 class Conveyor(Vertex):
     '''
     Graph node - edge consists of a transform
