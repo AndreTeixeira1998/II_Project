@@ -5,7 +5,7 @@ from Optimizer.search import dijkstra
 from Optimizer.pathing.pathgraph import Conveyor, PathGraph
 from Optimizer.pathing.dijkstra import dijkstra_conveyors
 from OPC_UA.subhandles import OptimizerSubHandler
-from Receive_client_orders.Order import Transform as TransformOrder
+from Receive_client_orders.Order import TransformOrder
 from Optimizer.config import setup
 
 TOOL_SWAP_DURATION = 20

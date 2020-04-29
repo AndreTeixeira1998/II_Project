@@ -3,7 +3,7 @@ import copy
 import collections
 from Optimizer.transfgraph import Operation
 from Optimizer.search import bfs
-from Receive_client_orders.Order import Transform as TransformOrder
+from Receive_client_orders.Order import TransformOrder
 from Optimizer.baby_optimizer import Piece, State, Optimizer
 
 TOOL_SWAP_DURATION = 20

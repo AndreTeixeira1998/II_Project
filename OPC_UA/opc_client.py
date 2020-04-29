@@ -13,7 +13,7 @@ from Optimizer.baby_optimizer import BabyOptimizer
 from Optimizer.baby_optimizer import Piece
 
 
-from Receive_client_orders.Order import Transform as TransformOrder
+from Receive_client_orders.Order import TransformOrder
 
 SUB_PERIOD = 20 #Publishing interval in miliseconds
 LOG_FILENAME = 'opc_client.log'
@@ -102,6 +102,7 @@ async def write(client, vars, optimizer, q_udp_in):
 			#Hey
 			piece = optimizer.dispatch_queue.popleft()
 			###########################################
+			# codigo amazing para mandar as peças##
 			print('codigo amazing para mandar as peças \m/')
 			###########################################
 			print(f"Dispatching piece no {piece.id}")
