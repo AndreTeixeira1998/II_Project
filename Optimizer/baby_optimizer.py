@@ -15,6 +15,7 @@ from Optimizer.config import setup
 TOOL_SWAP_DURATION = 20
 OPTIMIZATION_TIMEOUT = 60
 
+
 class Piece():
 	'''
 	Há de fazer grandes coisas esta classe
@@ -33,11 +34,13 @@ class Piece():
 	def __str__(self):
 		return str(self.id)
 
+
 class State:
 	'''
 	Piece and machine status at a given time
 	'''
-	def __init__(self, machines = {}, pieces = {}):
+
+	def __init__(self, machines={}, pieces={}):
 		self.machines = machines
 		self.pieces = pieces
 		self.num_pieces = 0
@@ -50,10 +53,11 @@ class State:
 		return self.__str__() == other.__str__()
 
 	def __lt__(self, other):
-		return	self.get_value() < self.get_value()
+		return self.get_value() < self.get_value()
 
 	def get_value(self):
 		return max(m.waiting_time for m in self.machines.values())
+
 
 class Optimizer:
 	'''
@@ -66,7 +70,7 @@ class Optimizer:
 
 	def __init__(self):
 		self.factory_state = {}
-		self.transf_graph = TransfGraph()
+		self.transf_graph = {}
 		self.path_graph = PathGraph()
 		self.statelistener = OptimizerSubHandler(self)
 		self.state = State()
@@ -81,11 +85,14 @@ class Optimizer:
 		[print(f"{key}: {value}") for key, value in self.factory_state.items()]
 		print('==========================================================================\r\n')
 
-	def add_piece_type(self, type):
-		return self.transf_graph.add_vertex(type)
+	def add_transform_cell(self, cell_id: int):
+		self.transf_graph[cell_id] = TransfGraph();
 
-	def add_transform(self, frm, to, transform: Transform):
-		return self.transf_graph.add_edge(frm, to, transform)
+	def add_piece_type(self, type, cell_id: int):
+		self.transf_graph[cell_id].add_vertex(type)
+
+	def add_transform(self, frm, to, transform: Transform, cell_id: int):
+		return self.transf_graph[cell_id].add_edge(frm, to, transform)
 
 	def add_machine(self, name):
 		if name not in self.state.machines.keys():
@@ -107,9 +114,11 @@ class Optimizer:
 		start = 1
 		final = [2, 49, 50]
 		path = [start]
-		dict = {"Ma": [4, 16, 28], "Mb": [5, 17, 30], "Mc": [6, 18, 30], "end_your_life": final}
+		dict = {"Ma_1": 4, "Mb_1": 5, "Mc_1": 6,
+				"Ma_2": 16, "Mb_2": 17, "Mc_2": 18,
+				"Ma_3": 28, "Mb_3": 29, "Mc_3": 30, "end_your_life": final}
 		for trans in trans_path:
-			encoded = dict[str(trans.machine)][0]
+			encoded = dict[str(trans.machine)]
 			if debug:
 				print(encoded)
 			path.append(encoded)
@@ -149,25 +158,35 @@ class Optimizer:
 		return duration, path
 
 	def order_handler(self, order: TransformOrder):
+		if order.before_type == 4 and order.after_type == 7:
+			print("Wait. That's Illegal")
+			return
 		for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
 			self.state.pieces[piece_number] = \
 				(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
 			self.state.num_pieces += 1
 
+
 class BabyOptimizer(Optimizer):
 	'''
-	Simple optimizer for a single cell.
+	Simple optimizer for multiple isolated cells .
 	Greedy approach - only cares about the faster way
 		for next piece.
 	Priority: First come fist served (Reserves machine if needed)
 	Time Complexity: O(n)
 	'''
 
-	def compute_transform(self, piece_id, frm : str, to : str, search=dijkstra, debug=False, state = None):
-		#TODO Add check for non valid transforms
+	def compute_transform(self, piece_id, frm: str, to: str, search=dijkstra, debug=False, state=None):
+		# TODO Add check for non valid transforms
+		duration = float("inf")
 		if state is None:
 			state = self.state
-		duration, path, trans_path = search(self.transf_graph, frm, to)
+		for cell, graph in zip(self.transf_graph.keys(), self.transf_graph.values()):
+			n_duration, n_path, n_trans_path = search(graph, frm, to)
+			if n_duration < duration:
+				duration = n_duration
+				path = n_path
+				trans_path = n_trans_path
 		if debug:
 			print(f"\r\nComputing transform path for piece {piece_id}: {frm} -> {to}")
 			print("Shortest path {}, ETA = {} s".format([piece.id for piece in path], duration))
@@ -184,7 +203,7 @@ class BabyOptimizer(Optimizer):
 			if state.machines[trans.machine.id].waiting_time > total_machine_wait:
 				state.machines[trans.machine.id].update_wait_time(trans.duration + tool_swap)
 			else:
-				lock_duration = total_machine_wait-state.machines[trans.machine.id].waiting_time
+				lock_duration = total_machine_wait - state.machines[trans.machine.id].waiting_time
 				state.machines[trans.machine.id].update_wait_time(lock_duration + trans.duration + tool_swap)
 			# Update Machines
 			total_machine_wait = state.machines[trans.machine.id].waiting_time
@@ -196,18 +215,18 @@ class BabyOptimizer(Optimizer):
 
 		return duration, path, trans_path
 
-
 	def optimize_all_pieces(self):
 		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
-			#Todo: Change Piece types to int
+			# Todo: Change Piece types to int
 			before_type = self.state.pieces[piece_id].order.before_type
 			after_type = self.state.pieces[piece_id].order.after_type
-			_, _,  trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
+			_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
 			self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 			self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
 			self.state.pieces[piece_id].path = self.compute_path(trans_path)
 			self.state.pieces_optimized += 1
 		return self.state
+
 
 class DaddyOptimizer(Optimizer):
 	'''
@@ -217,7 +236,8 @@ class DaddyOptimizer(Optimizer):
 	Priority: First come fist served (Reserves machine if needed)
 	Time Complexity: O(b^n) (b: branching factor, n: number of pieces)
 	'''
-	def compute_all_transforms(self, piece_id, frm: str, to : str, state: State, search=bfs, debug=False):
+
+	def compute_all_transforms(self, piece_id, frm: str, to: str, state: State, search=bfs, debug=False):
 		sequences = search(self.transf_graph, frm, to)
 		new_states = []
 		for durations, paths, trans_path in sequences:
@@ -247,7 +267,7 @@ class DaddyOptimizer(Optimizer):
 			new_states.append(new_state)
 		return sorted(new_states)
 
-	def optimize_all_pieces(self, timeout = OPTIMIZATION_TIMEOUT):
+	def optimize_all_pieces(self, timeout=OPTIMIZATION_TIMEOUT):
 		open_states = collections.deque([self.state])
 		min_depth = self.state.pieces_optimized
 		max_depth = self.state.num_pieces
@@ -256,7 +276,7 @@ class DaddyOptimizer(Optimizer):
 		if timeout: start = time.time()
 		# Depth-First Search
 		while open_states:
-			if timeout and (time.time()-start) > timeout:
+			if timeout and (time.time() - start) > timeout:
 				print(f"TIMEOUT of {timeout}s exceeded")
 				if best_state:
 					print(f"Returning best result achieved")
@@ -278,41 +298,40 @@ class DaddyOptimizer(Optimizer):
 					curr_piece = state.pieces[state.pieces_optimized]
 					before_type = curr_piece.order.before_type
 					after_type = curr_piece.order.after_type
-					new_states = collections.deque(self.compute_all_transforms(state.pieces_optimized, f"P{before_type}", f"P{after_type}", debug=False, state=state))
+					new_states = collections.deque(
+						self.compute_all_transforms(state.pieces_optimized, f"P{before_type}", f"P{after_type}",
+													debug=False, state=state))
 					open_states = new_states + open_states
 
 		return best_state
+
 
 if __name__ == '__main__':
 
 	optimizer = BabyOptimizer()
 	print("Using BabyOptimizer")
 
-	#optimizer = DaddyOptimizer()
-	#print("Using DaddyOptimizer\r\n")
+	# optimizer = DaddyOptimizer()
+	# print("Using DaddyOptimizer\r\n")
 
 	fake_order = []
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-								max_delay=2000, before_type=2, after_type=6, quantity=30))
-
-
+									 max_delay=2000, before_type=2, after_type=6, quantity=10))
 	fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-								max_delay=2000, before_type=3, after_type=5, quantity=7))
-
+									 max_delay=2000, before_type=4, after_type=5, quantity=10))
 	fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-								max_delay=2000, before_type=7, after_type=9, quantity=10))
-
-	fake_order.append(TransformOrder(order_type = "Transform", order_number = 4,
-							    max_delay = 2000, before_type = 4, after_type = 8, quantity = 7))
-
-	fake_order.append(TransformOrder(order_type="Transform", order_number=5,
-								max_delay=2000, before_type=1, after_type=9, quantity=20))
-
-
+									 max_delay=2000, before_type=7, after_type=9, quantity=10))
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=4,
+	#								 max_delay=2000, before_type=4, after_type=8, quantity=7))
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=5,
+	#								 max_delay=2000, before_type=1, after_type=9, quantity=20))
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=6,
+	#								 max_delay=2000, before_type=4, after_type=7, quantity=20))
 
 	for order in fake_order:
-		print(f"Order number {order.order_number}. {order.quantity} transforms from P{order.before_type} to P{order.after_type}")
+		print(
+			f"Order number {order.order_number}. {order.quantity} transforms from P{order.before_type} to P{order.after_type}")
 		optimizer.order_handler(order)
 		print(f'Total number of pieces: {optimizer.state.num_pieces}\r\n')
 
@@ -322,9 +341,6 @@ if __name__ == '__main__':
 
 	end = time.time()
 	print(f'Optmized {optimizer.state.pieces_optimized}/{optimizer.state.num_pieces} '
-					f'pieces in {(end-start)*1000}ms')
+		  f'pieces in {(end - start) * 1000}ms')
 	print(f'{optimizer.state}')
 	optimizer.print_machine_schedule()
-
-
-

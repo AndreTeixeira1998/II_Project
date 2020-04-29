@@ -11,4 +11,4 @@ OPC_UA/opc_client.log
 # Local History for Visual Studio Code
 .history/
 *.pyc
-.__pychache__/
+**/__pychache__/
