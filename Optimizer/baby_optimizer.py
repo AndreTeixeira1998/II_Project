@@ -238,7 +238,7 @@ class DaddyOptimizer(Optimizer):
 	'''
 
 	def compute_all_transforms(self, piece_id, frm: str, to: str, state: State, search=bfs, debug=False):
-		sequences = search(self.transf_graph, frm, to)
+		sequences = search(self.transf_graph[1], frm, to) #Para já so é utilizavel para uma unica celula
 		new_states = []
 		for durations, paths, trans_path in sequences:
 			new_state = copy.deepcopy(state)
