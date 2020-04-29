@@ -22,7 +22,7 @@ from db.db_handler import DB_handler
 #		   ―>after_type
 #		   ―>max_delay
 #
-#	   Unload (inherits Order)
+#		Unload (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>number
@@ -30,7 +30,7 @@ from db.db_handler import DB_handler
 #		   ―>piece_type
 #		   ―>destination
 #
-#	   Request_Stores (inherits Order)
+#	   	Request_Stores (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>address
@@ -80,9 +80,9 @@ class Order:
 		print(data[2000:len(data)-348])
 		return data[2000:len(data)-348]
 
-class Transform(Order):
+class TransformOrder(Order):
 	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, db : DB_handler= None):
-		super(Transform, self).__init__(order_type, db)
+		super(TransformOrder, self).__init__(order_type, db)
 		self.order_number = order_number
 		self.before_type = before_type
 		self.after_type = after_type
@@ -122,9 +122,9 @@ class Transform(Order):
 
 
 		
-class Unload(Order):
+class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, db : DB_handler = None):
-		super(Unload, self).__init__(order_type, db)
+		super(UnloadOrder, self).__init__(order_type, db)
 		self.order_number = order_number
 		self.piece_type = piece_type
 		self.destination = destination
@@ -157,9 +157,9 @@ class Unload(Order):
 		else:
 			return None
 
-class Request_Stores(Order):
+class Request_StoresOrder(Order):
 	def __init__(self, order_type, address, port, db : DB_handler = None):
-		super(Request_Stores, self).__init__(order_type, db)
+		super(Request_StoresOrder, self).__init__(order_type, db)
 		self.address = address
 		self.port = port
 
@@ -201,18 +201,18 @@ def parse(file_string, address, port, db : DB_handler = None):
 					before_type = child.get("From")
 					after_type = child.get("To")
 					quantity = int(child.get("Quantity"))
-					orders.append(Transform(order_type = order_type, order_number = order_number, db = db,
+					orders.append(TransformOrder(order_type = order_type, order_number = order_number, db = db,
 									max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity))
 				elif order_type == "Unload":
 					order_number = int(ord.attrib["Number"])
 					piece_type = child.get("Type")
 					destination = int(child.get("Destination")[1])
 					quantity = int(child.get("Quantity"))
-					orders.append(Unload(order_number = order_number, order_type = order_type, db = db,
+					orders.append(UnloadOrder(order_number = order_number, order_type = order_type, db = db,
 									quantity = quantity, piece_type = piece_type, destination = destination))
 				else:
 					print("Error creating order (No such order type as %s)" % order_type)
 		elif ord.tag == "Request_Stores":
 			order_type = ord.tag
-			orders.append(Request_Stores(order_type = order_type, db = db, address = address, port = port))
+			orders.append(Request_StoresOrder(order_type = order_type, db = db, address = address, port = port))
 	return orders
