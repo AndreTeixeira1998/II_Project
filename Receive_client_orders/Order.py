@@ -22,7 +22,7 @@ from db.db_handler import DB_handler
 #		   ―>after_type
 #		   ―>max_delay
 #
-#	   Unload (inherits Order)
+#		Unload (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>number
@@ -30,7 +30,7 @@ from db.db_handler import DB_handler
 #		   ―>piece_type
 #		   ―>destination
 #
-#	   Request_Stores (inherits Order)
+#	   	Request_Stores (inherits Order)
 #		   ―>order_type
 #		   ―>time
 #		   ―>address
