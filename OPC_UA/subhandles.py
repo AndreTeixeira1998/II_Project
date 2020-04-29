@@ -41,6 +41,7 @@ class OptimizerSubHandler(SubHandler):
         SubHandler.__init__(self, logger)
         self.optimizer = optimizer
         self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1"}
+        self.lockflag = False
 
     def datachange_notification(self, node, val, data):
         """
@@ -57,7 +58,7 @@ class OptimizerSubHandler(SubHandler):
                 if "op" in str(node.nodeid.Identifier) and val is True:
                     print(f"pop an operation on {self.encoding[machine]}")
                     op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-                    print(op)
+                    self.optimizer.print_machine_schedule()
                 elif "Init" in str(node.nodeid.Identifier) and val is True:
                     next_op = self.optimizer.state.machines[self.encoding[machine]].op_list[0]
                     if next_op.step == 1:

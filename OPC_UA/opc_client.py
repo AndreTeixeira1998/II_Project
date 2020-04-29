@@ -7,6 +7,7 @@ sys.path.insert(0, "..")
 import logging
 import pickle
 import numpy as np
+from array import array
 from asyncua import Client, Node, ua
 from OPC_UA.subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
@@ -25,6 +26,12 @@ _logger = logging.getLogger('asyncua')
 #Some Global Vars
 path_length=51
 transf_length=6	
+
+machine_dic = {'Ma_1': 1, 'Mb_1': 2, 'Mc_1': 3,
+			   'Ma_2': 1, 'Mb_2': 2, 'Mc_2': 3,
+			   'Ma_3': 1, 'Mb_3': 2, 'Mc_3': 3}
+
+tool_dic = {'T1': 1, 'T2': 2, 'T3': 3}
 
 class OnePiece():
 	'''
@@ -54,34 +61,19 @@ class OnePiece():
 		datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
 		await var.write_value(datavalue)
 
-	async def update_path(self, var_id, var_path, var_maq, var_tool, var_new_piece, var_tipo_atual):
-		duration, piece, trans_path = self.optimizer.compute_transform(self.order.get("before_type"), self.order.get("after_type"))
-		path_to_write = self.optimizer.compute_path(trans_path)
-		
-		await self.write_array_int16(var_path, path_to_write, path_length) # set node value using implicit data type
-		await self.write_int16(var_id, self.id) # set node value using implicit data type
-		await self.write_int16(var_tipo_atual, 1)
-		await self.write_array_int16(var_maq, [1], transf_length)
-		await self.write_array_int16(var_tool, [1], transf_length)
+
+	async def send_path(self, piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual):
+		machine_translated = [machine_dic[machine] for machine in piece.machines]
+		tools_translated = [tool_dic[tool] for tool in piece.tools]
+		print(piece.tools)
+		await self.write_array_int16(var_path, piece.path, path_length)  # set node value using implicit data type
+		await self.write_int16(var_id, piece.id)  # set node value using implicit data type
+		await self.write_int16(var_tipo_atual, piece.type)
+		await self.write_array_int16(var_maq, machine_translated, transf_length)
+		await self.write_array_int16(var_tool, tools_translated, transf_length)
 		await self.write_bool(var_new_piece, True)
-		
-		return duration, piece, trans_path, path_to_write
+		return
 
-
-
-########################################## Isto não deveria estar aqui ################################################
-def order_handler(order):
-	if order.get("order_type") == "Request_Stores":
-		return None
-	else:
-		pieces = []
-		count = 0
-		while count != order.get("quantity"):
-			p = [order.get("before_type"), order.get("after_type")]
-			pieces.append(p)
-			count += 1
-	return pieces
-#######################################################################################################################
 
 async def write(client, vars, optimizer, q_udp_in):
 	print("######################debug: write() started")
@@ -95,8 +87,8 @@ async def write(client, vars, optimizer, q_udp_in):
 	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
 	var_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].tipo_atual")
 	
-	id=1
-
+	#id=1
+	sender = OnePiece(None, None, None)
 	while True:
 		while optimizer.dispatch_queue:
 			#Hey
@@ -104,26 +96,12 @@ async def write(client, vars, optimizer, q_udp_in):
 			###########################################
 			# codigo amazing para mandar as peças##
 			print('codigo amazing para mandar as peças \m/')
+			await sender.send_path(piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual)
 			###########################################
 			print(f"Dispatching piece no {piece.id}")
+			await asyncio.sleep(5)
 		await asyncio.sleep(1)
 
-		#
-		#	########################################## Isto não deveria estar aqui ################################################		#
-		#	while not q_udp_in.empty():
-		#		order = q_udp_in.get()
-		#		for o in order:
-		#			orders_client.append(o)
-		#	#######################################################################################################################		#
-		#	for order in orders_client:			#
-		#		await asyncio.sleep(5)
-		#		#try:
-		#		print("###############################    Changing Value!   ###############################")
-		#		_, _, _, path_to_write = await OnePiece(id, optimizer, order).update_path(var_id, var_path, var_maq, var_tool, var_new_piece, var_tipo_atual)
-		#		id+=1
-		#		#except:
-		#		#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		#
 
 async def read(client, vars, handler):
 	print("######################debug: read() started")
@@ -142,11 +120,11 @@ async def main(q_udp_in):
 	fake_order = []
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=2, after_type=6, quantity=10))
+									 max_delay=2000, before_type=2, after_type=6, quantity=9))
 	fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-									 max_delay=2000, before_type=4, after_type=5, quantity=10))
+									 max_delay=2000, before_type=4, after_type=5, quantity=9))
 	fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-									 max_delay=2000, before_type=7, after_type=9, quantity=10))
+									 max_delay=2000, before_type=7, after_type=9, quantity=9))
 
 	for order in fake_order:
 		print(
