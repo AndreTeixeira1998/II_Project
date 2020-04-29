@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import collections
 from queue import Queue
 
 sys.path.insert(0, "..")
@@ -9,6 +10,10 @@ import numpy as np
 from asyncua import Client, Node, ua
 from OPC_UA.subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
+from Optimizer.baby_optimizer import Piece
+
+
+from Receive_client_orders.Order import Transform as TransformOrder
 
 SUB_PERIOD = 20 #Publishing interval in miliseconds
 LOG_FILENAME = 'opc_client.log'
@@ -20,10 +25,8 @@ _logger = logging.getLogger('asyncua')
 #Some Global Vars
 path_length=51
 transf_length=6	
- 
 
-
-class Piece():
+class OnePiece():
 	'''
 	Classe Piece deveria ser importada mas sou lazy as **** 
 
@@ -33,6 +36,7 @@ class Piece():
 		self.optimizer=optimizer
 		self.waiting_time = 0
 		self.order=order
+
 
 	def __str__(self):
 		return self.id
@@ -69,7 +73,7 @@ class Piece():
 def order_handler(order):
 	if order.get("order_type") == "Request_Stores":
 		return None
-	else: 
+	else:
 		pieces = []
 		count = 0
 		while count != order.get("quantity"):
@@ -81,7 +85,7 @@ def order_handler(order):
 
 async def write(client, vars, optimizer, q_udp_in):
 	print("######################debug: write() started")
-	
+
 	orders_client = []
 	
 	var_id= await vars.get_child("4:id")
@@ -92,34 +96,36 @@ async def write(client, vars, optimizer, q_udp_in):
 	var_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].tipo_atual")
 	
 	id=1
-	
+
 	while True:
-	
-		########################################## Isto não deveria estar aqui ################################################
+		while optimizer.dispatch_queue:
+			#Hey
+			piece = optimizer.dispatch_queue.popleft()
+			###########################################
+			print('codigo amazing para mandar as peças \m/')
+			###########################################
+			print(f"Dispatching piece no {piece.id}")
+		await asyncio.sleep(1)
 
-		while not q_udp_in.empty():
-			order = q_udp_in.get()
-			for o in order:
-				orders_client.append(o)
-		#######################################################################################################################
+		#
+		#	########################################## Isto não deveria estar aqui ################################################		#
+		#	while not q_udp_in.empty():
+		#		order = q_udp_in.get()
+		#		for o in order:
+		#			orders_client.append(o)
+		#	#######################################################################################################################		#
+		#	for order in orders_client:			#
+		#		await asyncio.sleep(5)
+		#		#try:
+		#		print("###############################    Changing Value!   ###############################")
+		#		_, _, _, path_to_write = await OnePiece(id, optimizer, order).update_path(var_id, var_path, var_maq, var_tool, var_new_piece, var_tipo_atual)
+		#		id+=1
+		#		#except:
+		#		#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		#
 
-		for order in orders_client:	
-
-			await asyncio.sleep(5)
-			#try:
-			print("###############################    Changing Value!   ###############################")
-			_, _, _, path_to_write = await Piece(id, optimizer, order).update_path(var_id, var_path, var_maq, var_tool, var_new_piece, var_tipo_atual)
-			id+=1
-			#except:		
-			#	print("!!!!!!!!!!!!!!!!!!!!!!!  ERROR  Changing Value!   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
-	
-
-
-async def read(client, vars, optimizer):
+async def read(client, vars, handler):
 	print("######################debug: read() started")
-	
-	handler = OptimizerSubHandler(optimizer, _logger)
 
 	sub = await client.create_subscription(SUB_PERIOD, handler)
 	await sub.subscribe_data_change(vars)
@@ -128,18 +134,49 @@ async def read(client, vars, optimizer):
 
 async def main(q_udp_in):
 	url = 'opc.tcp://localhost:4840/'
-	
-	#Load optimizer configs from a pickle
-	with open("./Optimizer/config/babyFactory.pickle", "rb") as config_pickle: 
-		optimizer = pickle.load(config_pickle)
-	
+
+	####################################### Isto n deve tar aqui é so para testar sem precisar de enviar ordens #################################
+	optimizer = BabyOptimizer()
+
+	fake_order = []
+
+	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
+									 max_delay=2000, before_type=2, after_type=6, quantity=10))
+	fake_order.append(TransformOrder(order_type="Transform", order_number=2,
+									 max_delay=2000, before_type=4, after_type=5, quantity=10))
+	fake_order.append(TransformOrder(order_type="Transform", order_number=3,
+									 max_delay=2000, before_type=7, after_type=9, quantity=10))
+
+	for order in fake_order:
+		print(
+			f"Order number {order.order_number}. {order.quantity} transforms from P{order.before_type} to P{order.after_type}")
+		optimizer.order_handler(order)
+		print(f'Total number of pieces: {optimizer.state.num_pieces}\r\n')
+
+	print(f'Optimizing {optimizer.state.num_pieces} pieces')
+	optimizer.state = optimizer.optimize_all_pieces()
+	print(f'{optimizer.state}')
+	optimizer.print_machine_schedule()
+	#############################################################################################################################################
+
 	async with Client(url=url) as client:
 
-		vars_to_write = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]") 
-		vars_to_read = await vars_to_write.get_children()
+		vars_to_write = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]")
 
-		
-		await asyncio.gather(read(client, vars_to_read, optimizer), write(client, vars_to_write, optimizer, q_udp_in))
+		#Subscrições para monitorizar as maquinas
+		ma, mb, mc = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t3")\
+						, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t4")\
+							, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t5")
+		m_steps = await ma.get_children() + await mb.get_children() + await mc.get_children()
+		m_vars = []
+		for step in m_steps:
+			nodes = await step.get_children()
+			for node in nodes:
+				m_vars.append(node)
+
+
+		handler = OptimizerSubHandler(optimizer, _logger)
+		await asyncio.gather(read(client, m_vars, handler), write(client, vars_to_write, optimizer, q_udp_in))
 		
 
 		#Runs for 1 min

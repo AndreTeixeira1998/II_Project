@@ -1,8 +1,8 @@
 from Optimizer.graph import Graph, Vertex
-
+import collections
 
 class Operation:
-	def __init__(self, piece_id, transform, step, eta):
+	def __init__(self, piece_id, transform, step: int, eta):
 		self.piece_id = piece_id
 		self.step = step
 		self.transform = transform
@@ -21,7 +21,7 @@ class Machine:
 
 	def __init__(self, id, tool='T1'):
 		self.id = id
-		self.op_list = []
+		self.op_list = collections.deque([])
 		self.curr_tool = tool
 		self.waiting_time = 0
 

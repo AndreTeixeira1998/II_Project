@@ -1,4 +1,5 @@
 import time
+import collections
 from Optimizer.transfgraph import TransfGraph, Transform, Machine, Operation
 from Optimizer.search import dijkstra
 from Optimizer.pathing.pathgraph import Conveyor, PathGraph
@@ -14,7 +15,6 @@ OPTIMIZATION_TIMEOUT = 60
 class Piece():
 	'''
 	Há de fazer grandes coisas esta classe
-	<Rui>: Mudei a classe para ser mais similar à do PLC
 	'''
 
 	def __init__(self, id, type, path, machines, tools, order=None, var=None):
@@ -64,12 +64,13 @@ class Optimizer:
 		'''
 
 	def __init__(self):
-		self.factory_state = {}
+		self.factory_state = {} #variaveis monitorizadas por opc-ua
 		self.transf_graph = {}
 		self.path_graph = PathGraph()
 		self.statelistener = OptimizerSubHandler(self)
 		self.state = State()
 		self.transposition_table = {}
+		self.dispatch_queue = collections.deque([])
 		setup.optimizer_init(self)
 
 	def update_state(self, node, val):
@@ -256,7 +257,6 @@ if __name__ == '__main__':
 	print(f'Optimizing {optimizer.state.num_pieces} pieces')
 	start = time.time()
 	optimizer.state = optimizer.optimize_all_pieces()
-
 	end = time.time()
 	print(f'Optmized {optimizer.state.pieces_optimized}/{optimizer.state.num_pieces} '
 		  f'pieces in {(end - start) * 1000}ms')
