@@ -1,41 +1,47 @@
 import pickle
 import sys
 sys.path.insert(0, "..")
-from baby_optimizer import BabyOptimizer
-from transfgraph import TransfGraph, Transform, Machine
+from Optimizer.baby_optimizer import BabyOptimizer
+from Optimizer.transfgraph import TransfGraph, Transform, Machine
+
+NUMBER_OF_CELLS = 3
 
 #Object instantiation
-optimizer = BabyOptimizer()
+def optimizer_init(optimizer):
+	#Specifying all types of pieces available
 
-#Specifying all types of pieces available
-optimizer.add_piece_type('P1')
-optimizer.add_piece_type('P2')
-optimizer.add_piece_type('P3')
-optimizer.add_piece_type('P4')
-optimizer.add_piece_type('P5')
-optimizer.add_piece_type('P6')
-optimizer.add_piece_type('P7')
-optimizer.add_piece_type('P8')
-optimizer.add_piece_type('P9')
+	for cell in range(1, NUMBER_OF_CELLS+1):
+		optimizer.add_transform_cell(cell)
 
-#Specifying all machines available
-optimizer.add_machine('Ma')
-optimizer.add_machine('Mb')
-optimizer.add_machine('Mc')
+		optimizer.add_piece_type('P1', cell)
+		optimizer.add_piece_type('P2', cell)
+		optimizer.add_piece_type('P3', cell)
+		optimizer.add_piece_type('P4', cell)
+		optimizer.add_piece_type('P5', cell)
+		optimizer.add_piece_type('P6', cell)
+		optimizer.add_piece_type('P7', cell)
+		optimizer.add_piece_type('P8', cell)
+		optimizer.add_piece_type('P9', cell)
 
-#Specifying all transforms available
-optimizer.add_transform('P1', 'P2', Transform(optimizer.machines['Ma'], 'T1', 15))
-optimizer.add_transform('P1', 'P3', Transform(optimizer.machines['Mb'], 'T2', 20))
-optimizer.add_transform('P1', 'P4', Transform(optimizer.machines['Mc'], 'T1', 10))
-optimizer.add_transform('P2', 'P3', Transform(optimizer.machines['Ma'], 'T1', 15))
-optimizer.add_transform('P2', 'P6', Transform(optimizer.machines['Ma'], 'T2', 15))
-optimizer.add_transform('P3', 'P4', Transform(optimizer.machines['Mb'], 'T1', 15))
-optimizer.add_transform('P4', 'P5', Transform(optimizer.machines['Mc'], 'T1', 30))
-optimizer.add_transform('P4', 'P8', Transform(optimizer.machines['Mc'], 'T2', 10))
-optimizer.add_transform('P3', 'P7', Transform(optimizer.machines['Mb'], 'T2', 20))
-optimizer.add_transform('P6', 'P9', Transform(optimizer.machines['Ma'], 'T3', 15))
-optimizer.add_transform('P8', 'P9', Transform(optimizer.machines['Mc'], 'T3', 30))
-optimizer.add_transform('P7', 'P9', Transform(optimizer.machines['Mb'], 'T3', 20))
+		optimizer.add_machine(f'Ma_{cell}')
+		optimizer.add_machine(f'Mb_{cell}')
+		optimizer.add_machine(f'Mc_{cell}')
+
+		optimizer.add_transform('P1', 'P2', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T1', 15), cell)
+		optimizer.add_transform('P2', 'P3', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T1', 15), cell)
+		optimizer.add_transform('P2', 'P6', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T2', 15), cell)
+		optimizer.add_transform('P6', 'P9', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T3', 15), cell)
+		optimizer.add_transform('P1', 'P3', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T2', 20), cell)
+		optimizer.add_transform('P3', 'P4', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T1', 15), cell)
+		optimizer.add_transform('P3', 'P7', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T2', 20), cell)
+		optimizer.add_transform('P7', 'P9', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T3', 20), cell)
+		optimizer.add_transform('P1', 'P4', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T1', 10), cell)
+		optimizer.add_transform('P4', 'P5', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T1', 30), cell)
+		optimizer.add_transform('P4', 'P8', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T2', 10), cell)
+		optimizer.add_transform('P8', 'P9', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T3', 10), cell)
+		#Transformacao extra
+		#optimizer.add_transform('P8', 'P7', Transform(optimizer.state-machines[f'Ma_{cell}'], 'T2', 30))
+
 
 for i in range(50):
 	optimizer.add_conveyor(i+1)
