@@ -1,4 +1,4 @@
-from Receive_client_orders.Order import Order, Transform, Unload, Request_Stores, parse
+from Receive_client_orders.Order import Order, TransformOrder, UnloadOrder, Request_StoresOrder, parse
 from socket import socket, timeout, AF_INET, SOCK_DGRAM
 from threading import Thread
 from queue import Queue
@@ -65,5 +65,5 @@ def _run_example():
     
 if __name__ == "__main__":
 	import time
-	from Order import Order, Transform, Unload, Request_Stores, parse
+	from Order import Order, TransformOrder, UnloadOrder, Request_StoresOrder, parse
 	_run_example()
