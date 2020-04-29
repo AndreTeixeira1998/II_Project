@@ -1,7 +1,6 @@
 import pickle
 import sys
 sys.path.insert(0, "..")
-from Optimizer.baby_optimizer import BabyOptimizer
 from Optimizer.transfgraph import TransfGraph, Transform, Machine
 
 NUMBER_OF_CELLS = 3
