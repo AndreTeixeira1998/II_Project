@@ -62,16 +62,16 @@ class OnePiece():
 		await var.write_value(datavalue)
 
 
-	async def send_path(self, piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual):
+	async def send_path(self, piece, var_write):#piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual):
 		machine_translated = [machine_dic[machine] for machine in piece.machines]
 		tools_translated = [tool_dic[tool] for tool in piece.tools]
 		print(piece.tools)
-		await self.write_array_int16(var_path, piece.path, path_length)  # set node value using implicit data type
-		await self.write_int16(var_id, piece.id)  # set node value using implicit data type
-		await self.write_int16(var_tipo_atual, piece.type)
-		await self.write_array_int16(var_maq, machine_translated, transf_length)
-		await self.write_array_int16(var_tool, tools_translated, transf_length)
-		await self.write_bool(var_new_piece, True)
+		await self.write_array_int16(var_write["path"], piece.path, path_length)  # set node value using implicit data type
+		await self.write_int16(var_write["id"], piece.id)  # set node value using implicit data type
+		await self.write_int16(var_write["tipo_atual"], piece.type)
+		await self.write_array_int16(var_write["maq"], machine_translated, transf_length)
+		await self.write_array_int16(var_write["tool"], tools_translated, transf_length)
+		await self.write_bool(var_write["new_piece"], True)
 		return
 
 
@@ -80,6 +80,8 @@ async def write(client, vars, optimizer, q_udp_in):
 
 	orders_client = []
 	
+	#vars Escrita
+	
 	var_id= await vars.get_child("4:id")
 	var_path = await vars.get_child("4:path")
 	var_maq = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].transf.maq")
@@ -87,19 +89,48 @@ async def write(client, vars, optimizer, q_udp_in):
 	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
 	var_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].tipo_atual")
 	
+	var_write={"id" : var_id, 
+				"path" : var_path, 
+				"maq" : var_maq, 
+				"tool" : var_tool, 
+				"new_piece" : var_new_piece, 
+				"tipo_atual" : var_tipo_atual}
+	
+	#vars Leitura
+	var_despacha_1_para_3= client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1._entregar_posterior_o.x")
+	
 	#id=1
 	sender = OnePiece(None, None, None)
+	
+	cond = asyncio.Condition()
+
+	
+	
 	while True:
+		
+
 		while optimizer.dispatch_queue:
-			#Hey
-			piece = optimizer.dispatch_queue.popleft()
-			###########################################
-			# codigo amazing para mandar as peças##
-			print('codigo amazing para mandar as peças \m/')
-			await sender.send_path(piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual)
-			###########################################
-			print(f"Dispatching piece no {piece.id}")
-			await asyncio.sleep(5)
+			#lock
+			#async with cond:
+			if True:
+				async with cond:
+					piece = optimizer.dispatch_queue.popleft()
+					###########################################
+					# codigo amazing para mandar as peças##
+					print('codigo amazing para mandar as peças \m/')
+					await sender.send_path(piece, var_write)
+					###########################################
+					print(f"Dispatching piece no {piece.id}")
+				
+
+					if ((await var_despacha_1_para_3.get_value())==True):
+						await cond.notify()
+					await cond.wait()
+				#await asyncio.sleep(5)
+
+
+			
+			
 		await asyncio.sleep(1)
 
 
