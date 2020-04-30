@@ -75,7 +75,7 @@ class OnePiece():
 		return
 
 
-async def write(client, vars, optimizer, q_udp_in):
+async def write(client, vars, optimizer, q_udp_in, cond):
 	print("######################debug: write() started")
 
 	orders_client = []
@@ -96,13 +96,11 @@ async def write(client, vars, optimizer, q_udp_in):
 				"new_piece" : var_new_piece, 
 				"tipo_atual" : var_tipo_atual}
 	
-	#vars Leitura
-	var_despacha_1_para_3= client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1._entregar_posterior_o.x")
-	
+
 	#id=1
 	sender = OnePiece(None, None, None)
 	
-	cond = asyncio.Condition()
+	
 
 	
 	
@@ -122,16 +120,23 @@ async def write(client, vars, optimizer, q_udp_in):
 					###########################################
 					print(f"Dispatching piece no {piece.id}")
 				
-
-					if ((await var_despacha_1_para_3.get_value())==True):
-						await cond.notify()
 					await cond.wait()
 				#await asyncio.sleep(5)
-
-
-			
-			
-		await asyncio.sleep(1)
+				
+		await asyncio.sleep(0.2)
+		
+		
+		
+async def sentinela(client, cond):
+	#vars Leitura
+	var_despacha_1_para_3= client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1._entregar_posterior_o.x")
+	print( "VALLLL", await var_despacha_1_para_3.get_value())
+	while True:
+		if (await var_despacha_1_para_3.get_value()):
+			print('noted!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+			await cond.set()
+			break
+		
 
 
 async def read(client, vars, handler):
@@ -184,9 +189,10 @@ async def main(q_udp_in):
 			for node in nodes:
 				m_vars.append(node)
 
+		cond = asyncio.Event()
 
 		handler = OptimizerSubHandler(optimizer, _logger)
-		await asyncio.gather(read(client, m_vars, handler), write(client, vars_to_write, optimizer, q_udp_in))
+		await asyncio.gather(read(client, m_vars, handler), write(client, vars_to_write, optimizer, q_udp_in, cond), sentinela(client, cond))
 		
 
 		#Runs for 1 min
