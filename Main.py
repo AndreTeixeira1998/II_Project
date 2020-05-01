@@ -36,9 +36,16 @@ def run(q_udp_in):
 if __name__ == "__main__":
 	db = DB_handler()
 
-	q_udp = Queue()
+	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
 	t_order_rec = Thread(target = order_receive, args = (q_udp, db, ))
+	t_order_rec.name = "Thread_client_receive"
 	t_path_finder = Thread(target = run, args = (q_udp, ))
+	t_path_finder.name = "Thread_path_finder"
+
+	threads = [t_order_rec, t_path_finder]
 
 	t_order_rec.start()
 	t_path_finder.start()
+
+	## Joints all the threads
+	map(lambda x:x.join(),threads)

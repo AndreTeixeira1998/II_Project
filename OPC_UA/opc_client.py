@@ -115,7 +115,7 @@ async def write(client, vars, optimizer, q_udp_in, cond):
 					piece = optimizer.dispatch_queue.popleft()
 					###########################################
 					# codigo amazing para mandar as peças##
-					print('codigo amazing para mandar as peças \m/')
+					print('codigo amazing para mandar as peças \\m/')
 					await sender.send_path(piece, var_write)
 					###########################################
 					print(f"Dispatching piece no {piece.id}")
