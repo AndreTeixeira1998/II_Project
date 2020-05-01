@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, "..")
 from Optimizer.transfgraph import TransfGraph, Transform, Machine
 
-NUMBER_OF_CELLS = 1
+NUMBER_OF_CELLS = 3
 
 #Object instantiation
 def optimizer_init(optimizer):
@@ -198,5 +198,3 @@ def optimizer_init(optimizer):
 
 	optimizer.add_conveyor_path(47, 46, 1)
 
-	with open("babyFactory.pickle", "wb") as config_pickle:
-		pickle.dump(optimizer, config_pickle)

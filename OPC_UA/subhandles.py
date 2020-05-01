@@ -40,7 +40,9 @@ class OptimizerSubHandler(SubHandler):
     def __init__(self, optimizer, cond, logger=logging.getLogger(__name__)):
         SubHandler.__init__(self, logger)
         self.optimizer = optimizer
-        self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1"}
+        self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1",
+                         "c3t3": "Ma_2", "c3t4": "Mb_2", "c3t5": "Mc_2",
+                         "c5t3": "Ma_3", "c5t4": "Mb_3", "c5t5": "Mc_3"}
         self.cond = cond
 
     def datachange_notification(self, node, val, data):
@@ -53,7 +55,7 @@ class OptimizerSubHandler(SubHandler):
         if val is True:
             #só quero ver qnd ficam true depois pode-se tirar isto
             print(f'Change on {node.nodeid.Identifier}:  {val}')
-
+            pass
         #CRIAR OUTRO SUB HANDLER
         if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
             print("Release the prisioners")

@@ -91,12 +91,13 @@ async def write(client, vars, optimizer, cond):
 
 	while True:
 		while optimizer.dispatch_queue:
-			await cond.wait()
 			piece = optimizer.dispatch_queue.popleft()
+			await cond.wait()
 			await sender.send_path(piece, var_write)
-			print(f"Dispatching piece no {piece.id}")
+			print(f"Dispatching piece no {piece.id}: ")
+			print(list(optimizer.dispatch_queue))
 			cond.clear()
-		await asyncio.sleep(0.02)
+		await asyncio.sleep(1)
 
 async def read(client, vars, handler):
 	print("######################debug: read() started")
@@ -113,13 +114,14 @@ async def main():
 	fake_order = []
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=1, after_type=3, quantity=10))
+									 max_delay=2000, before_type=3, after_type=4, quantity=9))
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-									 max_delay=2000, before_type=2, after_type=6, quantity=10))
+									 max_delay=2000, before_type=1, after_type=2, quantity=9))
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-									 max_delay=2000, before_type=4, after_type=5, quantity=5))
+									 max_delay=2000, before_type=4, after_type=5, quantity=9))
+
 
 
 
@@ -147,10 +149,21 @@ async def main():
 		vars_to_write = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0]")
 
 		# Subscrições para monitorizar as maquinas
-		ma, mb, mc = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t3") \
+		ma_1, mb_1, mc_1 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t3") \
 			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t4") \
 			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c1t5")
-		m_steps = await ma.get_children() + await mb.get_children() + await mc.get_children()
+		ma_2, mb_2, mc_2 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c3t3") \
+			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c3t4") \
+			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c3t5")
+
+		ma_3, mb_3, mc_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c5t3") \
+			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c5t4") \
+			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c5t5") \
+
+		m_steps = await ma_1.get_children() + await mb_1.get_children() + await mc_1.get_children()
+		m_steps += await ma_2.get_children() + await mb_2.get_children() + await mc_2.get_children()
+		m_steps += await ma_3.get_children() + await mb_3.get_children() + await mc_3.get_children()
+
 		m_vars = []
 		for step in m_steps:
 			nodes = await step.get_children()
