@@ -67,7 +67,7 @@ class Optimizer:
 		self.factory_state = {} #variaveis monitorizadas por opc-ua
 		self.transf_graph = {}
 		self.path_graph = PathGraph()
-		self.statelistener = OptimizerSubHandler(self)
+		self.statelistener = None
 		self.state = State()
 		self.transposition_table = {}
 		self.dispatch_queue = collections.deque([])

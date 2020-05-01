@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, "..")
 from Optimizer.transfgraph import TransfGraph, Transform, Machine
 
-NUMBER_OF_CELLS = 3
+NUMBER_OF_CELLS = 1
 
 #Object instantiation
 def optimizer_init(optimizer):
@@ -30,7 +30,7 @@ def optimizer_init(optimizer):
 		optimizer.add_transform('P2', 'P3', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T1', 15), cell)
 		optimizer.add_transform('P2', 'P6', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T2', 15), cell)
 		optimizer.add_transform('P6', 'P9', Transform(optimizer.state.machines[f'Ma_{cell}'], 'T3', 15), cell)
-		optimizer.add_transform('P1', 'P3', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T2', 20), cell)
+		optimizer.add_transform('P1', 'P3', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T1', 20), cell)
 		optimizer.add_transform('P3', 'P4', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T1', 15), cell)
 		optimizer.add_transform('P3', 'P7', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T2', 20), cell)
 		optimizer.add_transform('P7', 'P9', Transform(optimizer.state.machines[f'Mb_{cell}'], 'T3', 20), cell)

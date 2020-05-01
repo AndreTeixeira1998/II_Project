@@ -37,11 +37,11 @@ class OptimizerSubHandler(SubHandler):
     sensor and actuator updates.
     """
 
-    def __init__(self, optimizer, logger=logging.getLogger(__name__)):
+    def __init__(self, optimizer, cond, logger=logging.getLogger(__name__)):
         SubHandler.__init__(self, logger)
         self.optimizer = optimizer
         self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1"}
-        self.lockflag = False
+        self.cond = cond
 
     def datachange_notification(self, node, val, data):
         """
@@ -53,6 +53,12 @@ class OptimizerSubHandler(SubHandler):
         if val is True:
             #só quero ver qnd ficam true depois pode-se tirar isto
             print(f'Change on {node.nodeid.Identifier}:  {val}')
+
+        #CRIAR OUTRO SUB HANDLER
+        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
+            print("Release the prisioners")
+            self.cond.set()
+
         for machine in self.encoding.keys():
             if machine in str(node.nodeid.Identifier):
                 if "op" in str(node.nodeid.Identifier) and val is True:
@@ -67,5 +73,7 @@ class OptimizerSubHandler(SubHandler):
                     else:
                         print(f"Machine {self.encoding[machine]} on standby")
                 break
+
         self.optimizer.update_state(node.nodeid.Identifier, val)
         #self.optimizer.print_state()
+
