@@ -55,7 +55,6 @@ class OptimizerSubHandler(SubHandler):
         if val is True:
             #só quero ver qnd ficam true depois pode-se tirar isto
             print(f'Change on {node.nodeid.Identifier}:  {val}')
-            pass
         #CRIAR OUTRO SUB HANDLER
         if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
             print("Release the prisioners")
@@ -68,12 +67,8 @@ class OptimizerSubHandler(SubHandler):
                     op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
                     self.optimizer.print_machine_schedule()
                 elif "Init" in str(node.nodeid.Identifier) and val is True:
-                    next_op = self.optimizer.state.machines[self.encoding[machine]].op_list[0]
-                    if next_op.step == 1:
-                        print(f"Send piece: {next_op.piece_id}")
-                        self.optimizer.dispatch_queue.append(self.optimizer.state.pieces[next_op.piece_id])
-                    else:
-                        print(f"Machine {self.encoding[machine]} on standby")
+                    self.optimizer.state.machines[self.encoding[machine]].make_available()
+                    print('big oi')
                 break
 
         self.optimizer.update_state(node.nodeid.Identifier, val)

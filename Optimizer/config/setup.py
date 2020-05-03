@@ -1,15 +1,17 @@
 import pickle
 import sys
+
 sys.path.insert(0, "..")
 from Optimizer.transfgraph import TransfGraph, Transform, Machine
 
 NUMBER_OF_CELLS = 3
 
-#Object instantiation
-def optimizer_init(optimizer):
-	#Specifying all types of pieces available
 
-	for cell in range(1, NUMBER_OF_CELLS+1):
+# Object instantiation
+def optimizer_init(optimizer):
+	# Specifying all types of pieces available
+
+	for cell in range(1, NUMBER_OF_CELLS + 1):
 		optimizer.add_transform_cell(cell)
 
 		optimizer.add_piece_type('P1', cell)
@@ -38,68 +40,67 @@ def optimizer_init(optimizer):
 		optimizer.add_transform('P4', 'P5', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T1', 30), cell)
 		optimizer.add_transform('P4', 'P8', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T2', 10), cell)
 		optimizer.add_transform('P8', 'P9', Transform(optimizer.state.machines[f'Mc_{cell}'], 'T3', 10), cell)
-		#Transformacao extra
-		#optimizer.add_transform('P8', 'P7', Transform(optimizer.state-machines[f'Ma_{cell}'], 'T2', 30))
-
+	# Transformacao extra
+	# optimizer.add_transform('P8', 'P7', Transform(optimizer.state-machines[f'Ma_{cell}'], 'T2', 30))
 
 	for i in range(50):
-		optimizer.add_conveyor(i+1)
+		optimizer.add_conveyor(i + 1)
 
-	optimizer.add_conveyor_path( 1,  3, 1)
+	optimizer.add_conveyor_path(1, 3, 1)
 
-	optimizer.add_conveyor_path( 3,  1, 1)
-	optimizer.add_conveyor_path( 3,  8, 1)
+	optimizer.add_conveyor_path(3, 1, 1)
+	optimizer.add_conveyor_path(3, 8, 1)
 
-	optimizer.add_conveyor_path( 8,  3, 1)
-	optimizer.add_conveyor_path( 8,  9, 1)
-	optimizer.add_conveyor_path( 8, 15, 1)
+	optimizer.add_conveyor_path(8, 3, 1)
+	optimizer.add_conveyor_path(8, 9, 1)
+	optimizer.add_conveyor_path(8, 15, 1)
 
-	optimizer.add_conveyor_path( 9,  8, 1)
-	optimizer.add_conveyor_path( 9, 10, 1)
+	optimizer.add_conveyor_path(9, 8, 1)
+	optimizer.add_conveyor_path(9, 10, 1)
 
-	optimizer.add_conveyor_path(10,  9, 1)
+	optimizer.add_conveyor_path(10, 9, 1)
 	optimizer.add_conveyor_path(10, 11, 1)
-	optimizer.add_conveyor_path(10,  4, 1)
-	optimizer.add_conveyor_path(10, 16, 9999999999999999)
+	optimizer.add_conveyor_path(10, 4, 1)
+	optimizer.add_conveyor_path(10, 16, 99)
 
-	optimizer.add_conveyor_path( 4, 10, 1)
+	optimizer.add_conveyor_path(4, 10, 1)
 
 	optimizer.add_conveyor_path(11, 10, 1)
 	optimizer.add_conveyor_path(11, 12, 1)
-	optimizer.add_conveyor_path(11, 17, 999999999999999)
-	optimizer.add_conveyor_path(11,  5, 1)
+	optimizer.add_conveyor_path(11, 17, 99)
+	optimizer.add_conveyor_path(11, 5, 1)
 
-	optimizer.add_conveyor_path( 5, 11, 1)
+	optimizer.add_conveyor_path(5, 11, 1)
 
 	optimizer.add_conveyor_path(12, 11, 1)
 	optimizer.add_conveyor_path(12, 13, 1)
-	optimizer.add_conveyor_path(12,  6, 1)
-	optimizer.add_conveyor_path(12, 18, 999999999999999)
+	optimizer.add_conveyor_path(12, 6, 1)
+	optimizer.add_conveyor_path(12, 18, 99)
 
 	optimizer.add_conveyor_path(13, 12, 1)
 	optimizer.add_conveyor_path(13, 14, 1)
 
-	optimizer.add_conveyor_path( 6, 12, 1)
+	optimizer.add_conveyor_path(6, 12, 1)
 
 	optimizer.add_conveyor_path(14, 13, 1)
-	optimizer.add_conveyor_path(14,  7, 1)
+	optimizer.add_conveyor_path(14, 7, 1)
 	optimizer.add_conveyor_path(14, 19, 1)
 
-	optimizer.add_conveyor_path( 7, 14, 1)
-	optimizer.add_conveyor_path( 7,  2, 1)
+	optimizer.add_conveyor_path(7, 14, 1)
+	optimizer.add_conveyor_path(7, 2, 1)
 
-	optimizer.add_conveyor_path( 2,  7, 1)
+	optimizer.add_conveyor_path(2, 7, 1)
 
 	optimizer.add_conveyor_path(15, 20, 1)
-	optimizer.add_conveyor_path(15,  8, 1)
+	optimizer.add_conveyor_path(15, 8, 1)
 
 	optimizer.add_conveyor_path(16, 22, 1)
-	optimizer.add_conveyor_path(16, 10, 1)
+	optimizer.add_conveyor_path(16, 10, 99)
 
-	optimizer.add_conveyor_path(17, 11, 1)
+	optimizer.add_conveyor_path(17, 11, 99)
 	optimizer.add_conveyor_path(17, 23, 1)
 
-	optimizer.add_conveyor_path(18, 12, 1)
+	optimizer.add_conveyor_path(18, 12, 99)
 	optimizer.add_conveyor_path(18, 24, 1)
 
 	optimizer.add_conveyor_path(19, 14, 1)
@@ -115,30 +116,35 @@ def optimizer_init(optimizer):
 	optimizer.add_conveyor_path(22, 21, 1)
 	optimizer.add_conveyor_path(22, 23, 1)
 	optimizer.add_conveyor_path(22, 16, 1)
-	optimizer.add_conveyor_path(22, 28, 9999999999999999)
+	optimizer.add_conveyor_path(22, 28, 99)
 
 	optimizer.add_conveyor_path(23, 17, 1)
-	optimizer.add_conveyor_path(23, 29, 9999999999999999)
+	optimizer.add_conveyor_path(23, 29, 99)
+	optimizer.add_conveyor_path(23, 22, 1)
+	optimizer.add_conveyor_path(23, 24, 1)
 
 	optimizer.add_conveyor_path(24, 18, 1)
-	optimizer.add_conveyor_path(24, 30, 9999999999999999)
+	optimizer.add_conveyor_path(24, 30, 99)
+	optimizer.add_conveyor_path(24, 23, 1)
+	optimizer.add_conveyor_path(24, 25, 1)
 
 	optimizer.add_conveyor_path(25, 24, 1)
 	optimizer.add_conveyor_path(25, 26, 1)
 
 	optimizer.add_conveyor_path(26, 19, 1)
 	optimizer.add_conveyor_path(26, 31, 1)
+	optimizer.add_conveyor_path(26, 25, 1)
 
 	optimizer.add_conveyor_path(27, 20, 1)
 	optimizer.add_conveyor_path(27, 32, 1)
 
-	optimizer.add_conveyor_path(28, 22, 999999999999999)
+	optimizer.add_conveyor_path(28, 22, 99)
 	optimizer.add_conveyor_path(28, 34, 1)
 
-	optimizer.add_conveyor_path(29, 23, 99999999999999)
+	optimizer.add_conveyor_path(29, 23, 99)
 	optimizer.add_conveyor_path(29, 35, 1)
 
-	optimizer.add_conveyor_path(30, 24, 999999999999999)
+	optimizer.add_conveyor_path(30, 24, 99)
 	optimizer.add_conveyor_path(30, 36, 1)
 
 	optimizer.add_conveyor_path(31, 26, 1)
@@ -165,6 +171,7 @@ def optimizer_init(optimizer):
 
 	optimizer.add_conveyor_path(37, 36, 1)
 	optimizer.add_conveyor_path(37, 38, 1)
+
 	optimizer.add_conveyor_path(38, 37, 1)
 	optimizer.add_conveyor_path(38, 31, 1)
 	optimizer.add_conveyor_path(38, 46, 1)
@@ -197,4 +204,3 @@ def optimizer_init(optimizer):
 	optimizer.add_conveyor_path(46, 47, 1)
 
 	optimizer.add_conveyor_path(47, 46, 1)
-

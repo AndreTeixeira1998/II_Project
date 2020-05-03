@@ -19,17 +19,24 @@ class Machine:
 	scheduled transformations (not implemented yet)
 	'''
 
-	def __init__(self, id, tool='T1'):
+	def __init__(self, id, tool='T1', is_free=False):
 		self.id = id
 		self.op_list = collections.deque([])
 		self.curr_tool = tool
 		self.waiting_time = 0
+		self.is_free = is_free
 
 	def __str__(self):
 		return self.id
 
 	def update_wait_time(self, increase):
 		self.waiting_time += increase
+
+	def make_available(self):
+		self.is_free = True
+
+	def make_unavailable(self):
+		self.is_free = False
 
 	def add_op(self, op):
 		self.op_list.append(op)

@@ -91,8 +91,8 @@ class TransformOrder(Order):
 
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		if self._db != None:
-			self._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay, 
-												   before_type = int(self.before_type[1]), after_type = int(self.after_type[1]), batch_size = self.quantity)
+			self._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
+												   before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity)
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
@@ -131,9 +131,9 @@ class UnloadOrder(Order):
 		self.quantity = quantity
 
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
-		if self._db != None:
-			self._db.insert(table = "unload_orders", order_id = self.order_number, 
-												   destination = self.destination, curr_type = int(self.piece_type[1]), batch_size = self.quantity)
+		#if self._db != None:
+		#	self._db.insert(table = "unload_orders", order_id = self.order_number,
+		#										   destination = self.destination, curr_type = self.piece_type, batch_size = self.quantity)
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
@@ -198,14 +198,14 @@ def parse(file_string, address, port, db : DB_handler = None):
 				if order_type == "Transform":
 					order_number = int(ord.attrib["Number"])
 					max_delay = int(child.get("MaxDelay"))
-					before_type = child.get("From")
-					after_type = child.get("To")
+					before_type = int(child.get("From")[1])
+					after_type = int(child.get("To")[1])
 					quantity = int(child.get("Quantity"))
 					orders.append(TransformOrder(order_type = order_type, order_number = order_number, db = db,
 									max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity))
 				elif order_type == "Unload":
 					order_number = int(ord.attrib["Number"])
-					piece_type = child.get("Type")
+					piece_type = int(child.get("Type")[1])
 					destination = int(child.get("Destination")[1])
 					quantity = int(child.get("Quantity"))
 					orders.append(UnloadOrder(order_number = order_number, order_type = order_type, db = db,

@@ -27,9 +27,9 @@ transf_length = 6
 
 machine_dic = {'Ma_1': 1, 'Mb_1': 2, 'Mc_1': 3,
 			   'Ma_2': 1, 'Mb_2': 2, 'Mc_2': 3,
-			   'Ma_3': 1, 'Mb_3': 2, 'Mc_3': 3}
+			   'Ma_3': 1, 'Mb_3': 2, 'Mc_3': 3, 0:0}
 
-tool_dic = {'T1': 1, 'T2': 2, 'T3': 3}
+tool_dic = {'T1': 1, 'T2': 2, 'T3': 3, 0:0}
 
 
 class OnePiece():
@@ -56,16 +56,15 @@ class OnePiece():
 
 	async def send_path(self, piece, var_write):  # piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual):
 		print("Send piece")
-		machine_translated = [machine_dic[machine] for machine in piece.machines]
-		tools_translated = [tool_dic[tool] for tool in piece.tools]
-		print(machine_translated)
-		print(tools_translated)
 		await self.write_array_int16(var_write["path"], piece.path,
 									 path_length)  # set node value using implicit data type
 		await self.write_int16(var_write["id"], piece.id)  # set node value using implicit data type
 		await self.write_int16(var_write["tipo_atual"], piece.type)
-		await self.write_array_int16(var_write["maq"], machine_translated, transf_length)
-		await self.write_array_int16(var_write["tool"], tools_translated, transf_length)
+		if piece.order.order_type == 'Transform':
+			machine_translated = [machine_dic[machine] for machine in piece.machines]
+			tools_translated = [tool_dic[tool] for tool in piece.tools]
+			await self.write_array_int16(var_write["maq"], machine_translated, transf_length)
+			await self.write_array_int16(var_write["tool"], tools_translated, transf_length)
 		await self.write_bool(var_write["new_piece"], True)
 		return
 
@@ -95,7 +94,6 @@ async def write(client, vars, optimizer, cond):
 			await cond.wait()
 			await sender.send_path(piece, var_write)
 			print(f"Dispatching piece no {piece.id}: ")
-			print(list(optimizer.dispatch_queue))
 			cond.clear()
 		await asyncio.sleep(1)
 
@@ -105,44 +103,8 @@ async def read(client, vars, handler):
 	await sub.subscribe_data_change(vars)
 
 
-async def main():
+async def opc_client_run(optimizer):
 	url = 'opc.tcp://localhost:4840/'
-
-	####################################### Isto n deve tar aqui é so para testar sem precisar de enviar ordens #################################
-	optimizer = BabyOptimizer()
-
-	fake_order = []
-
-	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=3, after_type=4, quantity=9))
-
-	fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-									 max_delay=2000, before_type=1, after_type=2, quantity=9))
-
-	fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-									 max_delay=2000, before_type=4, after_type=5, quantity=9))
-
-
-
-
-	#fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-	#								 max_delay=2000, before_type=4, after_type=5, quantity=9))
-	#fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-	#								 max_delay=2000, before_type=7, after_type=9, quantity=9))
-
-	for order in fake_order:
-		print(
-			f"Order number {order.order_number}. {order.quantity} transforms from P{order.before_type} to P{order.after_type}")
-		optimizer.order_handler(order)
-		print(f'Total number of pieces: {optimizer.state.num_pieces}\r\n')
-
-	print(f'Optimizing {optimizer.state.num_pieces} pieces')
-	optimizer.state = optimizer.optimize_all_pieces()
-	print(f'{optimizer.state}')
-	optimizer.print_machine_schedule()
-	#############################################################################################################################################
-
-	#
 
 	async with Client(url=url) as client:
 
@@ -179,15 +141,15 @@ async def main():
 		await asyncio.gather(read(client, m_vars, handler)
 							 , write(client, vars_to_write, optimizer, cond))
 
-		await asyncio.sleep(10)
 
 		# Runs for 1 min
 		# TODO: Change this into a permanent connection
-		await asyncio.sleep(100)
+		await asyncio.sleep(3600)
 
 
 if __name__ == '__main__':
+	optimizer = BabyOptimizer()
 	loop = asyncio.get_event_loop()
 	loop.set_debug(True)
-	loop.run_until_complete(main())
+	loop.run_until_complete(opc_client_run(optimizer))
 	loop.close()

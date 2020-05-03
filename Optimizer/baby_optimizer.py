@@ -146,6 +146,7 @@ class Optimizer:
 		return [conveyor.id for conveyor in final_path]
 
 	def compute_conveyor(self, frm: str, to: str, search=dijkstra_conveyors, debug=False):
+		print(f'{frm} -> {to}')
 		duration, path = search(self.path_graph, frm, to)
 		if debug:
 			print(f"\r\nComputing conveyor path: {frm} -> {to}")
@@ -155,6 +156,7 @@ class Optimizer:
 
 	def order_handler(self, order):
 		if isinstance(order, TransformOrder):
+			print("optimizer received TRANSFORM")
 			if order.before_type == 4 and order.after_type == 7:
 				print("Wait. That's Illegal")
 				return
@@ -163,14 +165,16 @@ class Optimizer:
 					(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
 				self.state.num_pieces += 1
 
-		#### COMENTADO BUE TROLHA PQ AINDA N TA BEM IMPLEMENTADO
-		#elif isinstance(order, UnloadOrder):
-		#	path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 52], 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 56]}
-		#	for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-		#		self.state.pieces[piece_number] = \
-		#			(Piece(piece_number, order.piece_type, path=path[order.destination], machines=None, tools=None, order=order))
-		#		self.state.num_pieces += 1
-		#		self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+		elif isinstance(order, UnloadOrder):
+			print("optimizer received UNLOAD")
+			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
+						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
+			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+				self.state.pieces[piece_number] = \
+					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
+						   order=order))
+				self.state.num_pieces += 1
+				self.dispatch_queue.appendleft(self.state.pieces[piece_number])
 
 
 class BabyOptimizer(Optimizer):
@@ -224,12 +228,15 @@ class BabyOptimizer(Optimizer):
 	def optimize_all_pieces(self):
 		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
 			# Todo: Change Piece types to int
-			before_type = self.state.pieces[piece_id].order.before_type
-			after_type = self.state.pieces[piece_id].order.after_type
-			_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
-			self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
-			self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-			self.state.pieces[piece_id].path = self.compute_path(trans_path)
+			if self.state.pieces[piece_id].order.order_type == 'Transform':
+				before_type = self.state.pieces[piece_id].order.before_type
+				print(before_type)
+				after_type = self.state.pieces[piece_id].order.after_type
+				print(after_type)
+				_, _, trans_path = self.compute_transform(piece_id, f'P{before_type}', f'P{after_type}', debug=False)
+				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
+				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
+				self.state.pieces[piece_id].path = self.compute_path(trans_path)
 			self.state.pieces_optimized += 1
 		return self.state
 
