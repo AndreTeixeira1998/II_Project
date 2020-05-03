@@ -156,7 +156,6 @@ class Optimizer:
 
 	def order_handler(self, order):
 		if isinstance(order, TransformOrder):
-			print("optimizer received TRANSFORM")
 			if order.before_type == 4 and order.after_type == 7:
 				print("Wait. That's Illegal")
 				return
@@ -166,7 +165,6 @@ class Optimizer:
 				self.state.num_pieces += 1
 
 		elif isinstance(order, UnloadOrder):
-			print("optimizer received UNLOAD")
 			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
 						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
 			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
@@ -230,9 +228,7 @@ class BabyOptimizer(Optimizer):
 			# Todo: Change Piece types to int
 			if self.state.pieces[piece_id].order.order_type == 'Transform':
 				before_type = self.state.pieces[piece_id].order.before_type
-				print(before_type)
 				after_type = self.state.pieces[piece_id].order.after_type
-				print(after_type)
 				_, _, trans_path = self.compute_transform(piece_id, f'P{before_type}', f'P{after_type}', debug=False)
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]

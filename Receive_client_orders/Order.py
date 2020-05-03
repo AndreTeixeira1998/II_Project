@@ -130,10 +130,10 @@ class UnloadOrder(Order):
 		self.destination = destination
 		self.quantity = quantity
 
-		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
-		#if self._db != None:
-		#	self._db.insert(table = "unload_orders", order_id = self.order_number,
-		#										   destination = self.destination, curr_type = self.piece_type, batch_size = self.quantity)
+		#Atualiza a base de dados com novas ordens, caso haja uma base de dados
+		if self._db != None:
+			self._db.insert(table = "unload_orders", order_id = self.order_number,
+												   destination = self.destination, curr_type = self.piece_type, batch_size = self.quantity)
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):

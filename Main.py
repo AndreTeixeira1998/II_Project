@@ -8,18 +8,6 @@ from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
 from db.db_handler import *
 
-def order_into_pieces(order:Order):
-	if order.get("order_type") == "Transform":		
-		pass
-	if order.get("order_type") == "Unload":
-		pass
-	raise NotImplementedError
-	# return pieces
-
-
-def int_threading():
-	raise NotImplementedError
-
 def test_thread(optimizer):
 	while True:
 		#print(f'{optimizer.state.num_pieces} {optimizer.dispatch_queue}')
@@ -28,7 +16,6 @@ def test_thread(optimizer):
 def compute_orders(optimizer, q_udp_in):
 	while True:
 		while not q_udp_in.empty():
-			print("HEYYYYYY")
 			order = q_udp_in.get()
 			for o in order:
 				if o.order_type == 'Transform':
@@ -39,7 +26,7 @@ def compute_orders(optimizer, q_udp_in):
 					optimizer.optimize_all_pieces()
 				elif o.order_type == 'Unload':
 					optimizer.order_handler(o)
-			optimizer.print_machine_schedule()
+			#optimizer.print_machine_schedule()
 
 def update_dispatch(optimizer):
 	while True:
@@ -48,13 +35,11 @@ def update_dispatch(optimizer):
 			if machine.is_free and machine.op_list:
 				next_op = machine.op_list[0]
 				if next_op.step == 1:
-					print(f"Send piece: {next_op.piece_id}")
 					optimizer.dispatch_queue.append(optimizer.state.pieces[next_op.piece_id])
 					machine.make_unavailable()
 				else:
-					print(f"Machine {machine} on standby")
 					machine.make_unavailable()
-		time.sleep(1)
+		time.sleep(0.1)
 
 
 def run(optimizer):
@@ -62,7 +47,6 @@ def run(optimizer):
 	# loop = asyncio.get_event_loop()
 	#	Para multi thrading...acho
 	#	https://stackoverflow.com/questions/46727787/runtimeerror-there-is-no-current-event-loop-in-thread-in-async-apscheduler
-	print('boop')
 	loop = asyncio.new_event_loop() 
 	asyncio.set_event_loop(loop)
 	loop.set_debug(True)

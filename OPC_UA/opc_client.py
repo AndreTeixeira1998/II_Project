@@ -55,7 +55,6 @@ class OnePiece():
 		await var.write_value(datavalue)
 
 	async def send_path(self, piece, var_write):  # piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual):
-		print("Send piece")
 		await self.write_array_int16(var_write["path"], piece.path,
 									 path_length)  # set node value using implicit data type
 		await self.write_int16(var_write["id"], piece.id)  # set node value using implicit data type
@@ -93,7 +92,7 @@ async def write(client, vars, optimizer, cond):
 			piece = optimizer.dispatch_queue.popleft()
 			await cond.wait()
 			await sender.send_path(piece, var_write)
-			print(f"Dispatching piece no {piece.id}: ")
+			#print(f"Dispatching piece no {piece.id}: ")
 			cond.clear()
 		await asyncio.sleep(1)
 
@@ -138,6 +137,7 @@ async def opc_client_run(optimizer):
 		cond = asyncio.Event()
 		handler = OptimizerSubHandler(optimizer, cond, _logger)
 
+		print("MES-PLC Connection established")
 		await asyncio.gather(read(client, m_vars, handler)
 							 , write(client, vars_to_write, optimizer, cond))
 

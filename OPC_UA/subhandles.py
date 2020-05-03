@@ -54,21 +54,21 @@ class OptimizerSubHandler(SubHandler):
         self._logger.debug("Update {}:\t {}" .format(node, val))
         if val is True:
             #só quero ver qnd ficam true depois pode-se tirar isto
-            print(f'Change on {node.nodeid.Identifier}:  {val}')
+            #print(f'Change on {node.nodeid.Identifier}:  {val}')
+            pass
         #CRIAR OUTRO SUB HANDLER
         if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
-            print("Release the prisioners")
+            #print("Release the prisioners")
             self.cond.set()
 
         for machine in self.encoding.keys():
             if machine in str(node.nodeid.Identifier):
                 if "op" in str(node.nodeid.Identifier) and val is True:
-                    print(f"pop an operation on {self.encoding[machine]}")
+                    #print(f"pop an operation on {self.encoding[machine]}")
                     op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-                    self.optimizer.print_machine_schedule()
+                    #self.optimizer.print_machine_schedule()
                 elif "Init" in str(node.nodeid.Identifier) and val is True:
                     self.optimizer.state.machines[self.encoding[machine]].make_available()
-                    print('big oi')
                 break
 
         self.optimizer.update_state(node.nodeid.Identifier, val)
