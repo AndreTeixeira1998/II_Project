@@ -1,8 +1,11 @@
 import sys
 
+
+
 sys.path.insert(0, "..")
+sys.path.insert(0, "DB")	# Juro só assim é que me começou a funcionar
 # from OPC_UA.opc_client import *
-from DB.db_handler import *
+from db_handler import *
 
 
 
@@ -48,7 +51,7 @@ class StatMan:
 			else: time_beg = None
 			if item[3] != None: time_end = item[3].time().strftime("%H:%M:%S")
 			else: time_end = None
-			filtered_data.append([item[0], "Unload", item[5], "-", "-", "-", time_rec, time_beg, time_end, "*slack*"])
+			filtered_data.append([item[0], "Request", item[5], "-", "-", "-", time_rec, time_beg, time_end, "*slack*"])
 
 		return filtered_data
 	

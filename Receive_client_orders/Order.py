@@ -5,7 +5,7 @@ from datetime import datetime
 
 import sys
 sys.path.insert(0, "..")
-from db.db_handler import DB_handler
+from DB.db_handler import DB_handler
 
 #######################################################################################################
 #
