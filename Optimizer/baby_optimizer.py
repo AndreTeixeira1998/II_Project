@@ -5,7 +5,7 @@ from Optimizer.search import dijkstra
 from Optimizer.pathing.pathgraph import Conveyor, PathGraph
 from Optimizer.pathing.dijkstra import dijkstra_conveyors
 from OPC_UA.subhandles import OptimizerSubHandler
-from Receive_client_orders.Order import TransformOrder
+from Receive_client_orders.Order import TransformOrder, UnloadOrder
 from Optimizer.config import setup
 
 TOOL_SWAP_DURATION = 20
@@ -67,7 +67,7 @@ class Optimizer:
 		self.factory_state = {} #variaveis monitorizadas por opc-ua
 		self.transf_graph = {}
 		self.path_graph = PathGraph()
-		self.statelistener = OptimizerSubHandler(self)
+		self.statelistener = None
 		self.state = State()
 		self.transposition_table = {}
 		self.dispatch_queue = collections.deque([])
@@ -146,6 +146,7 @@ class Optimizer:
 		return [conveyor.id for conveyor in final_path]
 
 	def compute_conveyor(self, frm: str, to: str, search=dijkstra_conveyors, debug=False):
+		print(f'{frm} -> {to}')
 		duration, path = search(self.path_graph, frm, to)
 		if debug:
 			print(f"\r\nComputing conveyor path: {frm} -> {to}")
@@ -153,14 +154,25 @@ class Optimizer:
 
 		return duration, path
 
-	def order_handler(self, order: TransformOrder):
-		if order.before_type == 4 and order.after_type == 7:
-			print("Wait. That's Illegal")
-			return
-		for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-			self.state.pieces[piece_number] = \
-				(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
-			self.state.num_pieces += 1
+	def order_handler(self, order):
+		if isinstance(order, TransformOrder):
+			if order.before_type == 4 and order.after_type == 7:
+				print("Wait. That's Illegal")
+				return
+			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+				self.state.pieces[piece_number] = \
+					(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
+				self.state.num_pieces += 1
+
+		elif isinstance(order, UnloadOrder):
+			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
+						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
+			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+				self.state.pieces[piece_number] = \
+					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
+						   order=order))
+				self.state.num_pieces += 1
+				self.dispatch_queue.appendleft(self.state.pieces[piece_number])
 
 
 class BabyOptimizer(Optimizer):
@@ -214,12 +226,13 @@ class BabyOptimizer(Optimizer):
 	def optimize_all_pieces(self):
 		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
 			# Todo: Change Piece types to int
-			before_type = self.state.pieces[piece_id].order.before_type
-			after_type = self.state.pieces[piece_id].order.after_type
-			_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
-			self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
-			self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-			self.state.pieces[piece_id].path = self.compute_path(trans_path)
+			if self.state.pieces[piece_id].order.order_type == 'Transform':
+				before_type = self.state.pieces[piece_id].order.before_type
+				after_type = self.state.pieces[piece_id].order.after_type
+				_, _, trans_path = self.compute_transform(piece_id, f'P{before_type}', f'P{after_type}', debug=False)
+				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
+				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
+				self.state.pieces[piece_id].path = self.compute_path(trans_path)
 			self.state.pieces_optimized += 1
 		return self.state
 
@@ -236,11 +249,16 @@ if __name__ == '__main__':
 	fake_order = []
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=2, after_type=6, quantity=10))
-	fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-									 max_delay=2000, before_type=4, after_type=5, quantity=10))
-	fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-									 max_delay=2000, before_type=7, after_type=9, quantity=10))
+									 max_delay=2000, before_type=3, after_type=4, quantity=3))
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=2,
+	#								 max_delay=2000, before_type=2, after_type=6, quantity=3))
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=3,
+	#								 max_delay=2000, before_type=4, after_type=5, quantity=3))
+
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=2,
+	#								 max_delay=2000, before_type=4, after_type=5, quantity=10))
+	#fake_order.append(TransformOrder(order_type="Transform", order_number=3,
+	#								 max_delay=2000, before_type=7, after_type=9, quantity=10))
 	#fake_order.append(TransformOrder(order_type="Transform", order_number=4,
 	#								 max_delay=2000, before_type=4, after_type=8, quantity=7))
 	#fake_order.append(TransformOrder(order_type="Transform", order_number=5,
