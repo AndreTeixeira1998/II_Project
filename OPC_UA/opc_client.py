@@ -54,6 +54,7 @@ class OnePiece():
 		datavalue = ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
 		await var.write_value(datavalue)
 
+
 	async def send_path(self, piece, var_write):  # piece, var_path, var_id, var_maq, var_tool, var_new_piece, var_tipo_atual):
 		await self.write_array_int16(var_write["path"], piece.path,
 									 path_length)  # set node value using implicit data type
@@ -64,8 +65,10 @@ class OnePiece():
 			tools_translated = [tool_dic[tool] for tool in piece.tools]
 			await self.write_array_int16(var_write["maq"], machine_translated, transf_length)
 			await self.write_array_int16(var_write["tool"], tools_translated, transf_length)
+      
 		await self.write_bool(var_write["new_piece"], True)
 		return
+
 
 
 async def write(client, vars, optimizer, cond):
@@ -77,6 +80,7 @@ async def write(client, vars, optimizer, cond):
 	var_new_piece = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.new_piece")
 	var_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[0].tipo_atual")
 
+
 	var_write = {"id": var_id,
 				 "path": var_path,
 				 "maq": var_maq,
@@ -86,7 +90,6 @@ async def write(client, vars, optimizer, cond):
 
 	# id=1
 	sender = OnePiece()
-
 	while True:
 		while optimizer.dispatch_queue:
 			piece = optimizer.dispatch_queue.popleft()
@@ -95,6 +98,19 @@ async def write(client, vars, optimizer, cond):
 			#print(f"Dispatching piece no {piece.id}: ")
 			cond.clear()
 		await asyncio.sleep(1)
+		
+
+#O objetivo da sentinela é ser um policia que anda a vigiar as threads
+		
+async def sentinela(client, evento):
+	#vars Leitura
+	var_despacha_1_para_3= client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1._entregar_posterior_o.x")
+	print( "VALLLL", await var_despacha_1_para_3.get_value())
+	while True:
+		if (await var_despacha_1_para_3.get_value()):
+			print('noted!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+			evento.set()
+			await asyncio.sleep(1)
 
 async def read(client, vars, handler):
 	print("######################debug: read() started")

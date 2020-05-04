@@ -1,12 +1,15 @@
 import asyncio
 from threading import Thread
 from queue import Queue
+import sys
 import time
 
 from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
-from db.db_handler import *
+from DB.db_handler import *
+sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, juro por deus que não percebo os  retardanços do windows com as paths
+from GUI import GUI
 
 def test_thread(optimizer):
 	while True:
@@ -57,7 +60,10 @@ def run(optimizer):
 #	https://docs.python.org/3/library/asyncio-queue.html
 if __name__ == "__main__":
 	db = DB_handler()
+
+	win = GUI(db)
 	optimizer = BabyOptimizer()
+
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
 	t_order_rec = Thread(target = order_receive, args = (q_udp, db, True))
@@ -75,6 +81,9 @@ if __name__ == "__main__":
 
 	t_opc_run.start()
 	t_order_rec.start()
+	
+	win.open_GUI()
+
 	t_compute_orders.start()
 	t_update_dispatch.start()
 	t_test.start()
