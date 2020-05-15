@@ -37,14 +37,20 @@ class OptimizerSubHandler(SubHandler):
     sensor and actuator updates.
     """
 
-    def __init__(self, optimizer, cond, logger=logging.getLogger(__name__)):
+    def __init__(self, optimizer, cond, cond2, cond3, cond_pusher_1, vars_pusher1, logger=logging.getLogger(__name__)):
         SubHandler.__init__(self, logger)
         self.optimizer = optimizer
         self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1",
                          "c3t3": "Ma_2", "c3t4": "Mb_2", "c3t5": "Mc_2",
                          "c5t3": "Ma_3", "c5t4": "Mb_3", "c5t5": "Mc_3"}
         self.cond = cond
-
+        self.cond2 = cond2
+        self.cond3 = cond3
+        self.cond_pusher_1=cond_pusher_1
+        
+        
+        self.vars_pusher1=vars_pusher1
+        
     def datachange_notification(self, node, val, data):
         """
         Overrides parent class method to update optimizer state
@@ -60,6 +66,21 @@ class OptimizerSubHandler(SubHandler):
         if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
             print("Release the prisioners")
             self.cond.set()
+            
+        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor" and val is True:
+            print("LOCK AND LOAD")
+            self.cond2.set()
+            
+        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor" and val is True:
+            print("LOCK AND LOAD")
+            self.cond3.set()
+        
+        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.IoConfig_Globals_Mapping.pm13_sensor" and val is True:
+            
+            #asyncio.sleep(1)
+            #if(vars_pusher1["vars_1_discharge"].get_value() ==False and vars_pusher1["vars_2_discharge"].get_value() ==False and vars_pusher1["vars_3_discharge"].get_value() ==False):
+            print("UNLOAD SERRVICES")
+            self.cond_pusher_1.set()
 
         for machine in self.encoding.keys():
             if machine in str(node.nodeid.Identifier):
