@@ -169,8 +169,10 @@ async def unload(client, optimizer, vars_, cond_pusher_1):
             order_=optimizer.pusher.dispatch_queue_1.pop()
             print("quantidade em falta: ", order_.quantity)
             optimizer.order_handler(order_, continue_unload_command=True)
-            #optimizer.optimize_all_pieces()
-            optimizer.dispatch_queue.append(TransformOrder(order_type="Transform", order_number=3, max_delay=2000, before_type=4, after_type=5, quantity=3))
+            optimizer.optimize_all_pieces()
+            order_test = TransformOrder(order_type="Transform", order_number=3, max_delay=2000, before_type=4, after_type=5, quantity=3)
+            optimizer.order_handler(order_, continue_unload_command=True)
+            optimizer.optimize_all_pieces()
             cond_pusher_1.clear()
             
         
