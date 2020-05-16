@@ -305,12 +305,13 @@ class HorOptimizer(Optimizer):
 					total_wait_time = state.machines[curr_m].waiting_time
 			else:
 				if curr_m != prev_m:
+					#Backprop
+					state.machines[curr_m].waiting_time = max(total_wait_time, state.machines[curr_m].waiting_time)
+					state.machines[prev_m].waiting_time = state.machines[curr_m].waiting_time
 					if curr_t != prev_t:
-						state.machines[curr_m].waiting_time = max(total_wait_time, state.machines[curr_m].waiting_time)
 						state.machines[curr_m].waiting_time += trans.duration + TOOL_SWAP_DURATION
 						total_wait_time = state.machines[curr_m].waiting_time
 					else:
-						state.machines[curr_m].waiting_time = max(total_wait_time, state.machines[curr_m].waiting_time)
 						state.machines[curr_m].waiting_time += trans.duration
 						total_wait_time = state.machines[curr_m].waiting_time
 				else:
