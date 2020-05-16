@@ -95,7 +95,24 @@ async def write(client, vars, optimizer, cond):
 			#print(f"Dispatching piece no {piece.id}: ")
 			optimizer.tracker.mark_dispatched(piece.id)
 			cond.clear()
-		await asyncio.sleep(0.1)
+		await asyncio.sleep(0.01)
+
+async def swap_tools(tool_nodes, optimizer):
+	sender = OnePiece()
+	while True:
+		for machine in optimizer.state.machines.values():
+			if machine.next_tool:
+				#print(f'{machine.id}: {tool_nodes[machine.id]} {tool_dic[machine.next_tool]} {type(tool_dic[machine.next_tool])}')
+				await sender.write_int16(tool_nodes[machine.id], tool_dic[machine.next_tool])
+			elif machine.op_list:
+				machine.next_tool = machine.op_list[0].transform.tool
+			else:
+				continue
+		await asyncio.sleep(1)
+
+
+
+
 
 async def read(client, vars, handler):
 	print("######################debug: read() started")
@@ -132,6 +149,19 @@ async def opc_client_run(optimizer):
 			for node in nodes:
 				m_vars.append(node)
 
+		tool_nodes = {
+			'Ma_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_ma1"),
+			'Ma_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_ma2"),
+			'Ma_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_ma3"),
+			'Mb_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mb1"),
+			'Mb_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mb2"),
+			'Mb_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mb3"),
+			'Mc_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mc1"),
+			'Mc_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mc2"),
+			'Mc_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mc3")
+		}
+
+
 		var_despacha_1_para_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x")
 		m_vars.append(var_despacha_1_para_3)
 
@@ -143,7 +173,7 @@ async def opc_client_run(optimizer):
 
 		print("MES-PLC Connection established")
 		await asyncio.gather(read(client, m_vars, handler)
-							 , write(client, vars_to_write, optimizer, cond))
+							 , write(client, vars_to_write, optimizer, cond), swap_tools(tool_nodes, optimizer))
 
 
 		# Runs for 1 min

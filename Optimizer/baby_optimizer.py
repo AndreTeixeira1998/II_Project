@@ -361,7 +361,6 @@ class HorOptimizer(Optimizer):
 		return best_seq
 
 	def optimize_all_pieces(self):
-		print('OIII')
 		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
 			# Todo: Change Piece types to int
 			if self.state.pieces[piece_id].order.order_type == 'Transform':

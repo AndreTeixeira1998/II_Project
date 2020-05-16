@@ -11,6 +11,9 @@ class Operation:
 	def __str__(self):
 		return f"P:{self.piece_id} S:{self.step} M:{self.transform.machine.id} T:{self.transform.tool} ETA:{self.eta}"
 
+	def update_next_tool(self):
+		self.transform.machine.next_tool = self.transform.machine.op_list[0].transform.tool
+
 
 class Machine:
 	'''
@@ -23,6 +26,7 @@ class Machine:
 		self.id = id
 		self.op_list = collections.deque([])
 		self.curr_tool = tool
+		self.next_tool = None
 		self.waiting_time = 0
 		self.is_free = is_free
 

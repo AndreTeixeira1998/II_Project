@@ -24,9 +24,6 @@ def compute_orders(optimizer, q_udp_in):
 			order = q_udp_in.get()
 			for o in order:
 				if o.order_type == 'Transform':
-					i = 0
-					print(f"{i}")
-					i = i+1
 					optimizer.order_handler(o)
 					optimizer.optimize_all_pieces()
 				elif o.order_type == 'Unload':

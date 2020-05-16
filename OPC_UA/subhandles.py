@@ -72,7 +72,9 @@ class OptimizerSubHandler(SubHandler):
                 if "op" in str(node.nodeid.Identifier) and val is True:
                     #print(f"pop an operation on {self.encoding[machine]}")
                     op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-                    #self.optimizer.print_machine_schedule()
+                    self.optimizer.print_machine_schedule()
+                    self.optimizer.state.machines[self.encoding[machine]].op_list[0].update_next_tool()
+
                 elif "Init" in str(node.nodeid.Identifier) and val is True:
                     self.optimizer.state.machines[self.encoding[machine]].make_available()
                 break
