@@ -6,6 +6,7 @@ import time
 from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
+from Optimizer.baby_optimizer import HorOptimizer
 from db.db_handler import *
 
 def test_thread(optimizer):
@@ -57,7 +58,7 @@ def run(optimizer):
 #	https://docs.python.org/3/library/asyncio-queue.html
 if __name__ == "__main__":
 	db = DB_handler()
-	optimizer = BabyOptimizer()
+	optimizer = HorOptimizer()
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
 	t_order_rec = Thread(target = order_receive, args = (q_udp, db, True))

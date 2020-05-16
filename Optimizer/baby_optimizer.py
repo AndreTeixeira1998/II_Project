@@ -11,6 +11,11 @@ from Optimizer.config import setup
 TOOL_SWAP_DURATION = 20
 OPTIMIZATION_TIMEOUT = 60
 
+class Recipe:
+	def __init__(self, before_type, end_type, trans_path):
+		self.before_type = before_type
+		self.end_type = end_type
+		self.trans_path = trans_path
 
 class Piece():
 	'''
@@ -67,7 +72,7 @@ class Optimizer:
 		self.factory_state = {} #variaveis monitorizadas por opc-ua
 		self.transf_graph = {}
 		self.path_graph = PathGraph()
-		self.statelistener = None
+		self.recipes = {}
 		self.state = State()
 		self.transposition_table = {}
 		self.dispatch_queue = collections.deque([])
@@ -236,11 +241,114 @@ class BabyOptimizer(Optimizer):
 			self.state.pieces_optimized += 1
 		return self.state
 
+class HorOptimizer(Optimizer):
+	'''
+	Simple optimizer for multiple isolated cells .
+	Greedy approach - only cares about the faster way
+		for next piece.
+	Priority: First come fist served (Reserves machine if needed)
+	Time Complexity: O(n)
+	'''
 
+	def compute_transform(self, piece_id, frm: int, to: int, search=dijkstra, debug=False, state=None):
+		# TODO Add check for non valid transforms
+		state = self.state
+		recipes = self.recipes[f'{frm}->{to}']
+		curr_best = 99999
+		curr_best_idx = 0
+		for idx, recipe in enumerate(recipes):
+			total_wait_time = 0
+			for step, trans in enumerate(recipe):
+				curr_m = trans.machine.id
+				curr_t = trans.tool
+				if step == 0:
+					if curr_t != state.machines[curr_m].curr_tool:
+						total_wait_time += TOOL_SWAP_DURATION + state.machines[trans.machine.id].waiting_time
+						total_wait_time += trans.duration
+					else:
+						total_wait_time += trans.duration + state.machines[trans.machine.id].waiting_time
+				else:
+					if curr_m != prev_m:
+						if curr_t != state.machines[curr_m].curr_tool:
+							total_wait_time += max(0, TOOL_SWAP_DURATION + state.machines[curr_m].waiting_time - total_wait_time)
+							total_wait_time += trans.duration
+						else:
+							total_wait_time += max(0, state.machines[curr_m].waiting_time - total_wait_time)
+							total_wait_time += trans.duration
+					else:
+						if curr_t != prev_t:
+							total_wait_time += TOOL_SWAP_DURATION
+							total_wait_time += trans.duration
+						else:
+							total_wait_time += trans.duration
+
+				prev_m = curr_m
+				prev_t = curr_t
+				#print(trans, total_wait_time)
+
+			if total_wait_time <= curr_best:
+				curr_best = total_wait_time
+				curr_best_idx = idx
+				best_seq = recipes[curr_best_idx]
+
+		total_wait_time = 0
+		for step, trans in enumerate(best_seq, 1):
+			curr_m = trans.machine.id
+			curr_t = trans.tool
+			if step == 1:
+				if curr_t != state.machines[curr_m].curr_tool:
+					state.machines[curr_m].waiting_time += TOOL_SWAP_DURATION
+					state.machines[curr_m].waiting_time += trans.duration
+					total_wait_time = state.machines[curr_m].waiting_time
+				else:
+					state.machines[curr_m].waiting_time += trans.duration
+					total_wait_time = state.machines[curr_m].waiting_time
+			else:
+				if curr_m != prev_m:
+					if curr_t != prev_t:
+						state.machines[curr_m].waiting_time = max(total_wait_time, state.machines[curr_m].waiting_time)
+						state.machines[curr_m].waiting_time += trans.duration + TOOL_SWAP_DURATION
+						total_wait_time = state.machines[curr_m].waiting_time
+					else:
+						state.machines[curr_m].waiting_time = max(total_wait_time, state.machines[curr_m].waiting_time)
+						state.machines[curr_m].waiting_time += trans.duration
+						total_wait_time = state.machines[curr_m].waiting_time
+				else:
+					if curr_t != prev_t:
+						state.machines[curr_m].waiting_time += TOOL_SWAP_DURATION
+						state.machines[curr_m].waiting_time += trans.duration
+						total_wait_time = state.machines[curr_m].waiting_time
+					else:
+						state.machines[curr_m].waiting_time += trans.duration
+						total_wait_time = state.machines[curr_m].waiting_timen
+
+			prev_m = curr_m
+			prev_t = curr_t
+
+			total_machine_wait = state.machines[trans.machine.id].waiting_time
+			state.machines[curr_m].add_op(Operation(piece_id, trans, step, total_machine_wait))
+			state.machines[curr_m].curr_tool = curr_t
+		return best_seq
+
+	def optimize_all_pieces(self):
+		print('OIII')
+		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
+			# Todo: Change Piece types to int
+			if self.state.pieces[piece_id].order.order_type == 'Transform':
+				before_type = self.state.pieces[piece_id].order.before_type
+				after_type = self.state.pieces[piece_id].order.after_type
+				trans_path = self.compute_transform(piece_id, before_type, after_type, debug=False)
+				print([str(trans) for trans in trans_path])
+				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
+				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
+				self.state.pieces[piece_id].path = self.compute_path(trans_path)
+			self.state.pieces_optimized += 1
+		self.print_machine_schedule()
+		return self.state
 
 if __name__ == '__main__':
 
-	optimizer = BabyOptimizer()
+	optimizer = HorOptimizer()
 	print("Using BabyOptimizer")
 
 	# optimizer = DaddyOptimizer()
@@ -249,7 +357,7 @@ if __name__ == '__main__':
 	fake_order = []
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=3, after_type=4, quantity=3))
+									 max_delay=2000, before_type=1, after_type=9, quantity=20))
 	#fake_order.append(TransformOrder(order_type="Transform", order_number=2,
 	#								 max_delay=2000, before_type=2, after_type=6, quantity=3))
 	#fake_order.append(TransformOrder(order_type="Transform", order_number=3,

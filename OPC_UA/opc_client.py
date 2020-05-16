@@ -25,9 +25,9 @@ _logger = logging.getLogger('asyncua')
 path_length = 51
 transf_length = 6
 
-machine_dic = {'Ma_1': 1, 'Mb_1': 2, 'Mc_1': 3,
-			   'Ma_2': 1, 'Mb_2': 2, 'Mc_2': 3,
-			   'Ma_3': 1, 'Mb_3': 2, 'Mc_3': 3, 0:0}
+machine_dic = {'Ma_1': 4, 'Mb_1': 5, 'Mc_1': 6,
+			   'Ma_2': 16, 'Mb_2': 17, 'Mc_2': 18,
+			   'Ma_3': 28, 'Mb_3': 29, 'Mc_3': 30, 0:0}
 
 tool_dic = {'T1': 1, 'T2': 2, 'T3': 3, 0:0}
 
@@ -94,7 +94,7 @@ async def write(client, vars, optimizer, cond):
 			await sender.send_path(piece, var_write)
 			#print(f"Dispatching piece no {piece.id}: ")
 			cond.clear()
-		await asyncio.sleep(1)
+		await asyncio.sleep(0.1)
 
 async def read(client, vars, handler):
 	print("######################debug: read() started")
