@@ -11,7 +11,7 @@ from DB.db_handler import *
 sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, juro por deus que não percebo os  retardanços do windows com as paths
 from GUI import GUI
 from Optimizer.baby_optimizer import HorOptimizer
-from db.db_handler import *
+from DB.db_handler import *
 
 def test_thread(optimizer):
 	while True:
