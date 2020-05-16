@@ -39,9 +39,14 @@ def update_dispatch(optimizer):
 			#print(f'{machine}: {machine.op_list}')
 			if machine.is_free and machine.op_list:
 				next_op = machine.op_list[0]
+				next_piece = next_op.piece_id
 				if next_op.step == 1:
-					optimizer.dispatch_queue.append(optimizer.state.pieces[next_op.piece_id])
-					machine.make_unavailable()
+					if next_piece in optimizer.tracker.pieces_on_transit:
+						print('WARNING: Piece has already been dispatched')
+						machine.make_unavailable()
+					else:
+						optimizer.dispatch_queue.append(optimizer.state.pieces[next_piece])
+						machine.make_unavailable()
 				else:
 					machine.make_unavailable()
 		time.sleep(0.1)

@@ -8,8 +8,35 @@ from OPC_UA.subhandles import OptimizerSubHandler
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 from Optimizer.config import setup
 
-TOOL_SWAP_DURATION = 20
+TOOL_SWAP_DURATION = 30
 OPTIMIZATION_TIMEOUT = 60
+
+class Tracker:
+	def __init__(self, state, order_tracking={}, pcomplete={}, ptransit={}):
+		self.order_tracking = {}
+		self.pieces_complete = pcomplete
+		self.pieces_on_transit = ptransit
+		self.state = state
+
+	def add_order(self, order):
+		self.order_tracking[order] = 0
+
+	def mark_complete(self, piece_id):
+		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
+		self.pieces_on_transit.pop(piece_id)
+		self.order_tracking[self.state.pieces[piece_id].order] += 1
+
+	def mark_dispatched(self, piece_id):
+		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
+
+	def print_tracking_info(self):
+		print(f'Pieces on transit: {[pieceid for pieceid in self.pieces_on_transit.keys()]}')
+		print(f'Pieces complete: {[pieceid for pieceid in self.pieces_complete.keys()]}')
+
+	def print_order_status(self):
+		for order in self.order_tracking.keys():
+			print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
+
 
 class Recipe:
 	def __init__(self, before_type, end_type, trans_path):
@@ -74,6 +101,7 @@ class Optimizer:
 		self.path_graph = PathGraph()
 		self.recipes = {}
 		self.state = State()
+		self.tracker = Tracker(self.state)
 		self.transposition_table = {}
 		self.dispatch_queue = collections.deque([])
 		setup.optimizer_init(self)
@@ -178,6 +206,7 @@ class Optimizer:
 						   order=order))
 				self.state.num_pieces += 1
 				self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+		self.tracker.add_order(order)
 
 
 class BabyOptimizer(Optimizer):

@@ -93,6 +93,7 @@ async def write(client, vars, optimizer, cond):
 			await cond.wait()
 			await sender.send_path(piece, var_write)
 			#print(f"Dispatching piece no {piece.id}: ")
+			optimizer.tracker.mark_dispatched(piece.id)
 			cond.clear()
 		await asyncio.sleep(0.1)
 
@@ -133,6 +134,9 @@ async def opc_client_run(optimizer):
 
 		var_despacha_1_para_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x")
 		m_vars.append(var_despacha_1_para_3)
+
+		warehouse_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id')
+		m_vars.append(warehouse_in)
 
 		cond = asyncio.Event()
 		handler = OptimizerSubHandler(optimizer, cond, _logger)
