@@ -95,6 +95,7 @@ async def write(client, vars, optimizer, cond):
 			await cond.wait()
 			await sender.send_path(piece, var_write)
 			print(f"Dispatching piece no {piece.id}: ")
+			print(piece.path)
 			optimizer.tracker.mark_dispatched(piece.id)
 			cond.clear()
 		await asyncio.sleep(0.01)
@@ -130,7 +131,7 @@ async def charge_P1(client, cond2, charge_var):
 	sender = OnePiece()
 	dest_path = [39, 41, 42, 43, 44, 45, 46, 38, 31, 26, 19, 14, 7, 2]
 	var_load_path = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].path")
-	# var_load_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].tipo_atual")
+	var_load_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].tipo_atual")
 	# var_load_id
 
 	while True:
@@ -138,7 +139,7 @@ async def charge_P1(client, cond2, charge_var):
 			await cond2.wait()
 			# print("OOOOOOOOOOOOOOOOOOOOOOOOOOOO", await charge_var.get_value())
 			# await self.write_int16(var_write["id"], piece.id)  # set node value using implicit data type
-			# await self.write_int16(var_write["tipo_atual"], piece.type)
+			await sender.write_int16(var_load_tipo_atual, 1)
 			await sender.write_array_int16(var_load_path, dest_path,
 										   path_length)  # set node value using implicit data type
 			cond2.clear()
@@ -150,14 +151,13 @@ async def charge_P2(client, cond3, charge_var):
 	sender = OnePiece()
 	dest_path = [46, 38, 31, 26, 19, 14, 7, 2]
 	var_load_path = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].path")
-	# var_load_tipo_atual
-	# var_load_id
+	var_load_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].tipo_atual")
 
 	while True:
-
 		if (await charge_var.get_value()):
 			await cond3.wait()
 			# print("OOOOOOOOOOOOOOOOOOOOOOOOOOOO", await charge_var.get_value())
+			await sender.write_int16(var_load_tipo_atual, 2)
 			await sender.write_array_int16(var_load_path, dest_path,
 										   path_length)  # set node value using implicit data type
 			cond3.clear()
@@ -219,15 +219,15 @@ async def opc_client_run(optimizer):
 
 
 		tool_nodes = {
-			'Ma_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_ma1"),
-			'Ma_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_ma2"),
-			'Ma_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_ma3"),
-			'Mb_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mb1"),
-			'Mb_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mb2"),
-			'Mb_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mb3"),
-			'Mc_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mc1"),
-			'Mc_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mc2"),
-			'Mc_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tool_mc3")
+			'Ma_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c1t3"),
+			'Ma_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c3t3"),
+			'Ma_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c5t3"),
+			'Mb_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c1t4"),
+			'Mb_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c3t4"),
+			'Mb_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c5t4"),
+			'Mc_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c1t5"),
+			'Mc_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c3t5"),
+			'Mc_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c5t5")
 		}
 
 		var_despacha_1_para_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x")
