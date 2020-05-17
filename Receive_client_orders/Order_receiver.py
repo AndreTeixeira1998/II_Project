@@ -1,4 +1,4 @@
-from Receive_client_orders.Order import Order, TransformOrder, UnloadOrder, Request_StoresOrder, parse
+# from Receive_client_orders.Order import Order, TransformOrder, UnloadOrder, Request_StoresOrder, parse
 from socket import socket, timeout, AF_INET, SOCK_DGRAM
 from threading import Thread
 from queue import Queue
@@ -17,6 +17,8 @@ def answer_request(request):
 	message = request.create_xml()
 	# bytesToSend = str.encode(message)  #	Não deve ser preciso, já deve estar em binário
 	s.sendto(message,(request.get("address"),request.get("port")))
+	print(request.get("address") , " : " , request.get("port"))
+
 	
 
 def order_receive(out_q, db = None, notify_new_order = False):
@@ -28,8 +30,8 @@ def order_receive(out_q, db = None, notify_new_order = False):
 		received_orders = parse(data, addr_port[0], addr_port[1], db)
 		for index,rec in enumerate(received_orders):
 			if rec.get("order_type") == "Request_Stores":
-				if notify_new_order == True:
-					print("Send to", rec.get("address"), rec.get("port"))
+				#if notify_new_order == True:
+				#	print("Send to", rec.get("address"), rec.get("port"))
 				answer_request(rec)
 				del received_orders[index]
 
@@ -58,7 +60,8 @@ def _Communication_thread_example(in_q):
 def _run_example():
 	q = Queue()
     
-	t_order_rec = Thread(target = order_receive, args = (q, ))
+	db = DB_handler()
+	t_order_rec = Thread(target = order_receive, args = (q,db,  ))
 	t_Communication_thread_example = Thread(target = _Communication_thread_example, args = (q, ))
 	t_order_rec.start()
 	t_Communication_thread_example.start()
@@ -66,4 +69,9 @@ def _run_example():
 if __name__ == "__main__":
 	import time
 	from Order import Order, TransformOrder, UnloadOrder, Request_StoresOrder, parse
+	
+	import sys
+	sys.path.insert(0, "..")
+	sys.path.insert(0, "DB")
+	from db_handler import DB_handler
 	_run_example()
