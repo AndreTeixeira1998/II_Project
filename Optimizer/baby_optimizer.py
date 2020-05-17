@@ -44,6 +44,60 @@ class Recipe:
 		self.end_type = end_type
 		self.trans_path = trans_path
 
+
+#TODO adaptar isto
+
+class Pusher():
+    def __init__(self):
+
+        self.dispatch_queue_1 = collections.deque([])
+        self.dispatch_queue_2 = collections.deque([])
+        self.dispatch_queue_3 = collections.deque([])
+
+        self.virginity = []
+
+        self.count=0
+
+
+
+    def push(self, order):
+
+        if order.destination==1:
+
+            #queue1= self.dispatch_queue_1
+            #print(queue1)
+            return self.dispatch_queue_1.append(order)
+        if order.destination==2:
+
+            #queue2= self.dispatch_queue_2
+            #print(queue2)
+            return self.dispatch_queue_2.append(order)
+        if order.destination==3:
+
+            #queue3= self.dispatch_queue_3
+            #print(queue3)
+            return self.dispatch_queue_3.append(order)
+
+'''
+    def pop(self):
+
+        if self.num_pieces==1:
+            self.dispatch_queue_1.popleft()
+            queue1= self.dispatch_queue_1
+            #print(queue1)
+            return queue1
+        if self.num_pieces==2:
+            self.dispatch_queue_2.popleft()
+            queue1= self.dispatch_queue_2
+            #print(queue2)
+            return queue2
+        if self.num_pieces==3:
+            self.dispatch_queue_3.popleft()
+            queue1= self.dispatch_queue_3
+            #print(queue3)
+            return queue3
+'''
+
 class Piece():
 	'''
 	Há de fazer grandes coisas esta classe
@@ -103,6 +157,7 @@ class Optimizer:
 		self.state = State()
 		self.tracker = Tracker(self.state)
 		self.transposition_table = {}
+		self.pusher=Pusher()
 		self.dispatch_queue = collections.deque([])
 		setup.optimizer_init(self)
 
@@ -178,35 +233,74 @@ class Optimizer:
 			print("Shortest FINAL path {}, ETA = {} s".format([conveyor.id for conveyor in final_path], final_duration))
 		return [conveyor.id for conveyor in final_path]
 
-	def compute_conveyor(self, frm: str, to: str, search=dijkstra_conveyors, debug=False):
-		print(f'{frm} -> {to}')
-		duration, path = search(self.path_graph, frm, to)
-		if debug:
-			print(f"\r\nComputing conveyor path: {frm} -> {to}")
-			print("Shortest path {}, ETA = {} s".format([conveyor.id for conveyor in path], duration))
+    def compute_conveyor(self, frm: str, to: str, search=dijkstra_conveyors, debug=False):
+        duration, path = search(self.path_graph, frm, to)
+        if debug:
+            print(f"\r\nComputing conveyor path: {frm} -> {to}")
+            print("Shortest path {}, ETA = {} s".format([conveyor.id for conveyor in path], duration))
 
 		return duration, path
 
-	def order_handler(self, order):
-		if isinstance(order, TransformOrder):
-			if order.before_type == 4 and order.after_type == 7:
-				print("Wait. That's Illegal")
-				return
-			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-				self.state.pieces[piece_number] = \
-					(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
-				self.state.num_pieces += 1
+    def order_handler(self, order, continue_unload_command=False):
+        if isinstance(order, TransformOrder):
+            if order.before_type == 4 and order.after_type == 7:
+                print("Wait. That's Illegal")
+                return
+            for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+                self.state.pieces[piece_number] = \
+                    (Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
+                self.state.num_pieces += 1
 
-		elif isinstance(order, UnloadOrder):
-			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
-						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
-			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-				self.state.pieces[piece_number] = \
-					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
-						   order=order))
-				self.state.num_pieces += 1
-				self.dispatch_queue.appendleft(self.state.pieces[piece_number])
-		self.tracker.add_order(order)
+        #
+        elif isinstance(order, UnloadOrder):
+            dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49], 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
+            #verifica se ? a primeira vez da senhora
+            if order.destination not in self.pusher.virginity:
+                self.pusher.virginity.append(order.destination)
+                #print(self.pusher.virginity)
+                for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+                    self.state.pieces[piece_number] = \
+                        (Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None, order=order))
+
+                    self.pusher.count +=1
+                    if self.pusher.count <= 4:
+                        self.state.num_pieces += 1
+                        self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+                        #self.dispatch_queue.append(self.state.pieces[piece_number])
+
+                    else:
+                        self.pusher.count = 0
+                        #print("===>state:  ", self.state.num_pieces)
+                        order.quantity= order.quantity -4
+                        self.pusher.push(order)
+                        break
+
+
+            else:
+                if (continue_unload_command):
+                    for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+                        self.state.pieces[piece_number] = \
+                            (Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None, order=order))
+
+                        self.pusher.count +=1
+                        if self.pusher.count <= 3:
+                            self.state.num_pieces += 1
+
+                            self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+                            #self.dispatch_queue.append(self.state.pieces[piece_number])
+
+
+                        else:
+                            self.pusher.count = 0
+                            order.quantity= order.quantity -3
+                            self.pusher.push(order)
+                            break
+                else:
+                    #push para a fila
+                    self.pusher.push(order)
+
+
+
 
 
 class BabyOptimizer(Optimizer):
@@ -257,18 +351,24 @@ class BabyOptimizer(Optimizer):
 
 		return duration, path, trans_path
 
-	def optimize_all_pieces(self):
-		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
-			# Todo: Change Piece types to int
-			if self.state.pieces[piece_id].order.order_type == 'Transform':
-				before_type = self.state.pieces[piece_id].order.before_type
-				after_type = self.state.pieces[piece_id].order.after_type
-				_, _, trans_path = self.compute_transform(piece_id, f'P{before_type}', f'P{after_type}', debug=False)
-				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
-				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-				self.state.pieces[piece_id].path = self.compute_path(trans_path)
-			self.state.pieces_optimized += 1
-		return self.state
+    def optimize_all_pieces(self):
+        for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
+            if (self.state.pieces[piece_id].order.order_type== "Transform"):
+                # Todo: Change Piece types to int
+                before_type = self.state.pieces[piece_id].order.before_type
+                after_type = self.state.pieces[piece_id].order.after_type
+                _, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
+                self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
+                self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
+                self.state.pieces[piece_id].path = self.compute_path(trans_path)
+                self.state.pieces_optimized += 1
+            else:
+                #print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
+                self.state.pieces[piece_id].machines = [0,0,0,0,0,0]
+                self.state.pieces[piece_id].tools = [0,0,0,0,0,0]
+                self.state.pieces_optimized += 1
+
+        return self.state
 
 class HorOptimizer(Optimizer):
 	'''
@@ -371,6 +471,11 @@ class HorOptimizer(Optimizer):
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
 				self.state.pieces[piece_id].path = self.compute_path(trans_path)
+			else:
+				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
+				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
+				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
+				self.state.pieces_optimized += 1
 			self.state.pieces_optimized += 1
 		self.print_machine_schedule()
 		return self.state
@@ -386,7 +491,7 @@ if __name__ == '__main__':
 	fake_order = []
 
 	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=1, after_type=9, quantity=20))
+									 max_delay=2000, before_type=3, after_type=4, quantity=3))
 	#fake_order.append(TransformOrder(order_type="Transform", order_number=2,
 	#								 max_delay=2000, before_type=2, after_type=6, quantity=3))
 	#fake_order.append(TransformOrder(order_type="Transform", order_number=3,
