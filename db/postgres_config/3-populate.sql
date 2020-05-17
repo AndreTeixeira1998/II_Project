@@ -9,7 +9,7 @@ INSERT into unload_orders (order_id, curr_type, destination, batch_size) VALUES 
 INSERT into stock_orders (order_id, received_time) VALUES (6, '2016-06-22 19:10:25-07');
 
 
-do $$
+do $$ --Insere as maquinas de cada tipo na base de dados, default 0 para os outros tipos de dado
 	begin
 		for i in 1..3 loop
 			insert into machines (machine_type, transformation_cell) values('A', i);
@@ -19,14 +19,20 @@ do $$
 	end;
 $$;
 
-
-
-do $$
+do $$ --Insere as peças inicias do armazem
 	begin
-		for i in 1..10 loop
-			for ptype in 1..9 loop
-				INSERT INTO pieces (piece_type) VALUES (ptype);
+		for ptype in 1..9 loop
+			for i in 1..6 loop
+				INSERT INTO pieces (piece_type,piece_state) VALUES (ptype,'stored');
 			end loop;
+		end loop;
+	end;
+$$;
+
+do $$ --Insere as zonas de descarga com default de descarga por peça 0
+	begin
+		for i in 1..3 loop
+			INSERT INTO unloading_zones (area_id) VALUES (i);
 		end loop;
 	end;
 $$;

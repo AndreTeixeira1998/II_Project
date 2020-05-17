@@ -1,5 +1,5 @@
 import sys
-
+from datetime import datetime
 
 
 sys.path.insert(0, "..")
@@ -29,9 +29,15 @@ class StatMan:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
 			else: time_beg = None
-			if item[3] != None: time_end = item[3].time().strftime("%H:%M:%S")
-			else: time_end = None
-			filtered_data.append([item[0], "Transform", item[5], item[9], "*in prod*", "*pend*", time_rec, time_beg, time_end, "*slack*"])
+			if item[3] != None: 
+				slack = item[3].replace(tzinfo = None) - item[1].replace(tzinfo = None)
+				time_end = item[3].time().strftime("%H:%M:%S")
+			else:
+				slack =  datetime.now() - item[1].replace(tzinfo = None)
+				time_end = None
+
+			slack = item[4] - int(slack.total_seconds())
+			filtered_data.append([item[0], "Transform", item[5], item[9], "*in prod*", "*pend*", time_rec, time_beg, time_end, slack])
 
 		#	Informação para as unload orders
 		data = self._db.select("unload_orders", print_table = print_table)
@@ -39,9 +45,15 @@ class StatMan:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
 			else: time_beg = None
-			if item[3] != None: time_end = item[3].time().strftime("%H:%M:%S")
-			else: time_end = None
-			filtered_data.append([item[0], "Unload", item[5], item[9], "*in prod*", "*pend*", time_rec, time_beg, time_end, "*slack*"])
+			if item[3] != None: 
+				slack = item[3].replace(tzinfo = None) - item[1].replace(tzinfo = None)
+				time_end = item[3].time().strftime("%H:%M:%S")
+			else:
+				slack =  datetime.now() - item[1].replace(tzinfo = None)
+				time_end = None
+			
+			slack = item[4] - int(slack.total_seconds())
+			filtered_data.append([item[0], "Unload", item[5], item[9], "*in prod*", "*pend*", time_rec, time_beg, time_end, slack])
 
 		#	Informação para as Request Stores
 		data = self._db.select("stock_orders", print_table = print_table)
@@ -49,19 +61,30 @@ class StatMan:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
 			else: time_beg = None
-			if item[3] != None: time_end = item[3].time().strftime("%H:%M:%S")
-			else: time_end = None
-			filtered_data.append([item[0], "Request", item[5], "-", "-", "-", time_rec, time_beg, time_end, "*slack*"])
+			if item[3] != None: 
+				slack = item[3].replace(tzinfo = None) - item[1].replace(tzinfo = None)
+				time_end = item[3].time().strftime("%H:%M:%S")
+			else:
+				slack =  datetime.now() - item[1].replace(tzinfo = None)
+				time_end = None
+			
+			slack = item[4] - int(slack.total_seconds())
+			filtered_data.append([item[0], "Request", item[5], "-", "-", "-", time_rec, time_beg, time_end, slack])
 
 		return filtered_data
 	
 	def stat_machines(self, print_table = False):
-		data = self._db.select("machines", print_table = print_table)
-		filtered_data = data
+		data = self._db.select("machines", order_by = "machine_id", print_table = print_table)
+		filtered_data = []
+		for item in data:
+			f = [item[1] + str(item[2])]
+			[f.append(x) for x in item[3:]]
+			filtered_data.append(f)
+		
 		return filtered_data
 	
 	def stat_unload(self, print_table = False):
-		data = self._db.select("", print_table = print_table)
+		data = self._db.select("unloading_zones", order_by = "area_id", print_table = print_table)
 		filtered_data = data
 		return filtered_data
 
@@ -72,8 +95,9 @@ if __name__ == "__main__":
 
 	db = DB_handler()
 
+	db.update(table = "unloading_zones", where = {"area_id": 1} , p1 = 3, p3 = 1,  p2 = 9)
 	# db.insert("unload_orders", order_id = 12, curr_type = 2, destination = 1, batch_size = 5)
 	st = StatMan(columns_orders, columns_machines, columns_unload, db)
 
-	data = st.stat_orders(print_table = True)
+	data = st.stat_unload(print_table = True)
 	print(data)

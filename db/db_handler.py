@@ -129,15 +129,16 @@ class DB_handler:
 		except(Exception, psycopg2.Error) as error:
 			print("Error while connecting to PostgreSQL", error)
 
-	def select(self, table, content = "*", where = None, print_table = False):
+	def select(self, table, content = "*", where = None,  order_by = "", print_table = False):
 		"""Retorna dados da tabela. Está como default retirar todas as colunas. É possível selecionar vários dados especificos com o where.\n
 		O print_table permite imprimir a tabela no terminal (mais para efeitos de debugging ou demonstrativos)\n
 		Exemplo de uso:
-			data = db.select(table= "machines", content = ["machine_type", "transformation_cell"], print_table = True)\n
+			data = db.select(table= "machines", content = ["machine_type", "transformation_cell"], , order_by= "machine_id", print_table = True)\n
 		Para várias condições:
 			data = db.select("transform_orders", where = {"maxdelay" : 300, "batch_size" : 10})
 		"""
-		
+		colnames = self._get_columns(table)
+
 		Query = "SELECT "
 		if print_table ==True: first_line = ""
 		# Ver tipo de conteudo desejado
@@ -145,11 +146,9 @@ class DB_handler:
 			Query += "*"
 			Query += " FROM factory." + table
 			if print_table ==True:
-				colnames = self._get_columns(table)
 				for col in colnames:
 					first_line += col + "\t"
 		else:
-			colnames = self._get_columns(table)
 			for cont in content:
 				if cont in colnames:
 					Query += cont + ","
@@ -158,6 +157,8 @@ class DB_handler:
 			Query = Query[:-1] + " FROM factory." + table
 		
 		if where == None:
+			if order_by in colnames:
+				Query += " ORDER BY " + order_by
 			try:
 				self._cursor.execute(Query)
 			except(Exception, psycopg2.Error) as error:
@@ -169,6 +170,10 @@ class DB_handler:
 				Query += key + "=%s AND "
 				condition.append(str(value))
 			Query = Query[:-5]
+
+			if order_by in colnames:
+				Query += " ORDER BY " + order_by
+
 			try:
 				self._cursor.execute(Query,tuple(condition))
 			except(Exception, psycopg2.Error) as error:
@@ -205,7 +210,6 @@ if __name__ == "__main__":
 
 	#db.update("transform_orders", where = {"maxdelay" : 300, "curr_state" : "pending"}, after_type = 8)
 
-	data = db.select("transform_orders", content=["received_time"], where = {"maxdelay":300, "batch_size" : 10}, print_table= True)
+	data = db.select("machines", print_table= True, order_by= "machine_id")
 	
-	for d in data:
-		print(str(d[0])[11:19])
+	print(data)

@@ -1,17 +1,18 @@
 import urllib.request
 from html.parser import HTMLParser
 import xml.etree.ElementTree as ET
-from datetime import datetime
+# from datetime import datetime
 
 import sys
 sys.path.insert(0, "..")
-from DB.db_handler import DB_handler
+sys.path.insert(0, "DB")
+from db_handler import DB_handler
 
 #######################################################################################################
 #
 #   Order   
 #		―>order_type
-#		―>time	(might not be usable)
+#		―>time	(Removed for now)
 #
 #		Transform (inherits Order)
 #		   ―>order_type
@@ -70,7 +71,7 @@ class Order:
 	def __init__(self, order_type, db: DB_handler = None):
 		self._db = db
 		self.order_type = order_type
-		self.time = datetime.now()
+		# self.time = datetime.now()
 
 
 	@staticmethod
