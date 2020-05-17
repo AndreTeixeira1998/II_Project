@@ -90,7 +90,7 @@ if __name__ == "__main__":
 	t_update_dispatch.start()
 	t_test.start()
 
-	win.open_GUI()
+	#win.open_GUI()
 
 	## Joints all the threads
 	map(lambda x:x.join(),threads)

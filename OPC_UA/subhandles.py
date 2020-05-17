@@ -37,7 +37,7 @@ class OptimizerSubHandler(SubHandler):
     sensor and actuator updates.
     """
 
-    def __init__(self, optimizer, cond, cond2, cond3, cond_pusher_1, vars_pusher1, logger=logging.getLogger(__name__)):
+    def __init__(self, optimizer, cond, cond2, cond3, cond_pusher_1, logger=logging.getLogger(__name__)):
         SubHandler.__init__(self, logger)
         self.optimizer = optimizer
         self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1",
@@ -46,10 +46,7 @@ class OptimizerSubHandler(SubHandler):
         self.cond = cond
         self.cond2 = cond2
         self.cond3 = cond3
-        self.cond_pusher_1=cond_pusher_1
-        
-        
-        self.vars_pusher1=vars_pusher1
+        self.cond_pusher_1= cond_pusher_1
         
     def datachange_notification(self, node, val, data):
         """
@@ -57,6 +54,10 @@ class OptimizerSubHandler(SubHandler):
         #TODO: esta funçao tem q ser rapida por isso convem
                 depois trocar procuras por dicionarios hardcoded.
         """
+
+        self.optimizer.factory_state[str(node.nodeid.Identifier)] = val
+        #print(self.optimizer.factory_state)
+
         self._logger.debug("Update {}:\t {}" .format(node, val))
         if val is True:
             #só quero ver qnd ficam true depois pode-se tirar isto
@@ -67,22 +68,19 @@ class OptimizerSubHandler(SubHandler):
             #print("Release the prisioners")
             self.cond.set()
             
-        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor" and val is True:
+        elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor" and val is True:
             print("LOCK AND LOAD")
             self.cond2.set()
             
-        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor" and val is True:
+        elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor" and val is True:
             print("LOCK AND LOAD")
             self.cond3.set()
-        
-        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.IoConfig_Globals_Mapping.pm13_sensor" and val is True:
-            
-            #asyncio.sleep(1)
-            #if(vars_pusher1["vars_1_discharge"].get_value() ==False and vars_pusher1["vars_2_discharge"].get_value() ==False and vars_pusher1["vars_3_discharge"].get_value() ==False):
-            print("UNLOAD SERRVICES")
+
+        elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.rampa1.Enviar_nova.x" and val is True:
+            print('UNLOAD SERVICES')
             self.cond_pusher_1.set()
 
-        if str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id" and val != 0:
+        elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id" and val != 0:
             print(f"Piece {val} complete")
             self.optimizer.tracker.mark_complete(int(val))
             self.optimizer.tracker.print_tracking_info()
