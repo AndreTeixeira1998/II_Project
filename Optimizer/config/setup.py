@@ -18,7 +18,7 @@ decode = {1: 'Ma_1', 2: 'Mb_1', 3: 'Mc_1',
 # Object instantiation
 def optimizer_init(optimizer):
 	# Specifying all types of pieces available
-
+	print('Setting up Optimizer...')
 	for cell in range(1, NUMBER_OF_CELLS + 1):
 		optimizer.add_transform_cell(cell)
 
@@ -105,6 +105,8 @@ def optimizer_init(optimizer):
 				for seq in sequences:
 					optimizer.recipes[f'{p_before}->{p_after}'].append(seq)
 
+	print('Automatic recipes loaded.')
+
 	optimizer.recipes['1->9'].append([Transform(optimizer.state.machines[f'Ma_1'], 'T1', 15),
 							  			Transform(optimizer.state.machines[f'Ma_2'], 'T2', 15),
 							 				Transform(optimizer.state.machines[f'Ma_3'], 'T3', 15)])
@@ -117,7 +119,7 @@ def optimizer_init(optimizer):
 							  			Transform(optimizer.state.machines[f'Mc_2'], 'T2', 10),
 							 				Transform(optimizer.state.machines[f'Mc_3'], 'T3', 10)])
 
-
+	print('Custom recipes loaded')
 	#for transf, seq in zip(optimizer.recipes.keys(), optimizer.recipes.values()):
 	#	print(f'{transf}: {len(seq)} {seq}')
 
@@ -291,4 +293,6 @@ def optimizer_init(optimizer):
 	optimizer.add_conveyor_path(46, 47, BLOCKED)
 
 	optimizer.add_conveyor_path(47, 46, PASS)
+
+	print('Optimizer setup complete')
 

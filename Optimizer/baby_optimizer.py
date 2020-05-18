@@ -8,7 +8,7 @@ from OPC_UA.subhandles import OptimizerSubHandler
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 from Optimizer.config import setup
 
-TOOL_SWAP_DURATION = 30
+TOOL_SWAP_DURATION = 20
 OPTIMIZATION_TIMEOUT = 60
 
 
@@ -445,7 +445,6 @@ class HorOptimizer(Optimizer):
 				before_type = self.state.pieces[piece_id].order.before_type
 				after_type = self.state.pieces[piece_id].order.after_type
 				trans_path = self.compute_transform(piece_id, before_type, after_type, debug=False)
-				print([str(trans) for trans in trans_path])
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
 				self.state.pieces[piece_id].path = self.compute_path(trans_path)
@@ -455,6 +454,7 @@ class HorOptimizer(Optimizer):
 				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
 				#self.state.pieces_optimized += 1
 			self.state.pieces_optimized += 1
+		print('Optimized:')
 		self.print_machine_schedule()
 		return self.state
 

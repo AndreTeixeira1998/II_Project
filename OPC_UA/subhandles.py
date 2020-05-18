@@ -84,14 +84,14 @@ class OptimizerSubHandler(SubHandler):
             print(f"Piece {val} complete")
             self.optimizer.tracker.mark_complete(int(val))
             self.optimizer.tracker.print_tracking_info()
-            self.optimizer.tracker.print_order_status()
+            #self.optimizer.tracker.print_order_status()
 
         for machine in self.encoding.keys():
             if machine in str(node.nodeid.Identifier):
                 if "op" in str(node.nodeid.Identifier) and val is True:
                     #print(f"pop an operation on {self.encoding[machine]}")
                     op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-                    self.optimizer.print_machine_schedule()
+                    #self.optimizer.print_machine_schedule()
                     self.optimizer.state.machines[self.encoding[machine]].op_list[0].update_next_tool()
 
                 elif "Init" in str(node.nodeid.Identifier) and val is True:
