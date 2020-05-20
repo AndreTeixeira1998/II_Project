@@ -17,7 +17,7 @@ def answer_request(request):
 	message = request.create_xml()
 	# bytesToSend = str.encode(message)  #	Não deve ser preciso, já deve estar em binário
 	s.sendto(message,(request.get("address"),request.get("port")))
-	print(request.get("address") , " : " , request.get("port"))
+	print(request.get("address") , " : " , request.get("port"), " Message: ", message)
 
 	
 

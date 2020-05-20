@@ -17,7 +17,7 @@ def parse_from_db_unload(data, db):
 	parsed_order = []
 	for order in data:
 		parsed_order.append(UnloadOrder(order_type = "Unload", order_number = order[0], piece_type = order[6], 
-										destination = order[7], quantity = order[8], db = db, unload = order[9], 
+										destination = order[7], quantity = order[8], db = db, unloaded = order[9], 
 										state = order[5], already_in_db= True))
 	return parsed_order
 
