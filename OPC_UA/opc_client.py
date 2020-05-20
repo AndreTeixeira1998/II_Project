@@ -70,13 +70,14 @@ class OnePiece():
 		return
 
 
-async def write(var_write, optimizer, cond):
+async def write(var_write, optimizer, cond, block_pieces):
 	#print("######################debug: write() started")
 	sender = OnePiece()
 
 	if optimizer.dispatch_queue:
 		piece = optimizer.dispatch_queue.popleft()
 		await cond.wait()
+		# await block_pieces.wait()
 		await sender.send_path(piece, var_write)
 		print(f"Dispatching piece no {piece.id}: ")
 		optimizer.tracker.mark_dispatched(piece.id)
@@ -237,7 +238,7 @@ async def opc_client_run(optimizer, loop):
 
 		while True:
 			await asyncio.gather(
-				write(var_write, optimizer, cond),
+				write(var_write, optimizer, cond, optimizer.block_pieces),
 				charge_P1(client, cond2, vars_P1_charge),
 				charge_P2(client, cond3, vars_P2_charge),
 				swap_tools(tool_nodes, optimizer),

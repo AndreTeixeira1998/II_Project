@@ -1,4 +1,5 @@
 import time
+import asyncio
 import collections
 from Optimizer.transfgraph import TransfGraph, Transform, Machine, Operation
 from Optimizer.search import dijkstra
@@ -129,8 +130,10 @@ class Optimizer:
 		self.factory_state = {}  # variaveis monitorizadas por opc-ua
 		self.transf_graph = {}
 		self.path_graph = PathGraph()
+		self.reverse_graph = PathGraph()
 		self.recipes = {}
 		self.state = State()
+		self.block_pieces = asyncio.Event()
 		self.tracker = Tracker(self.state)
 		self.transposition_table = {}
 		self.pusher = Pusher()
@@ -164,11 +167,11 @@ class Optimizer:
 		for machine in self.state.machines.values():
 			print(f"{machine.id}: {[str(op) for op in machine.op_list]}")
 
-	def add_conveyor(self, id_):
-		return self.path_graph.add_vertex(id_)
+	def add_conveyor(self, graph, id_):
+		return graph.add_vertex(id_)
 
-	def add_conveyor_path(self, frm, to, cost):
-		return self.path_graph.add_edge(frm, to, cost)
+	def add_conveyor_path(self, graph, frm, to, cost):
+		return graph.add_edge(frm, to, cost)
 
 	def encode(self, trans_path, debug=False):
 		start = 1
@@ -186,7 +189,7 @@ class Optimizer:
 		# print(path)
 		return path
 
-	def compute_path(self, trans_path, search=dijkstra_conveyors, debug=False):
+	def compute_path(self, graph, trans_path, search=dijkstra_conveyors, debug=False):
 		path_encoded = self.encode(trans_path)
 		final_path = []
 		final_duration = 0
@@ -196,7 +199,7 @@ class Optimizer:
 			frm = path_encoded[i]
 			to = next(path_iter)
 
-			duration, path = search(self.path_graph, frm, to)
+			duration, path = search(graph, frm, to)
 			final_path.extend(path[1:])
 			final_duration = final_duration + duration
 
@@ -210,8 +213,8 @@ class Optimizer:
 		return [conveyor.id for conveyor in final_path]
 
 
-	def compute_conveyor(self, frm: str, to: str, search=dijkstra_conveyors, debug=False):
-		duration, path = search(self.path_graph, frm, to)
+	def compute_conveyor(self, graph, frm: str, to: str, search=dijkstra_conveyors, debug=False):
+		duration, path = search(graph, frm, to)
 		if debug:
 			print(f"\r\nComputing conveyor path: {frm} -> {to}")
 			print("Shortest path {}, ETA = {} s".format([conveyor.id for conveyor in path], duration))
@@ -224,6 +227,7 @@ class Optimizer:
 		if isinstance(order, TransformOrder):
 			if order.before_type == 4 and order.after_type == 7:
 				print("Wait. That's Illegal")
+				self.block_pieces.clear()
 				return
 			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
 				self.state.pieces[piece_number] = \
@@ -337,7 +341,7 @@ def optimize_all_pieces(self):
 			_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
 			self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 			self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-			self.state.pieces[piece_id].path = self.compute_path(trans_path)
+			self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
 			self.state.pieces_optimized += 1
 		else:
 			# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
@@ -448,7 +452,7 @@ class HorOptimizer(Optimizer):
 				trans_path = self.compute_transform(piece_id, before_type, after_type, debug=False)
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-				self.state.pieces[piece_id].path = self.compute_path(trans_path)
+				self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
 			elif self.state.pieces[piece_id].order.order_type == 'Unload':
 				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
 				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
