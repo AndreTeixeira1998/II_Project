@@ -37,16 +37,17 @@ class OptimizerSubHandler(SubHandler):
     sensor and actuator updates.
     """
 
-    def __init__(self, optimizer, cond, cond2, cond3, cond_pusher_1, logger=logging.getLogger(__name__)):
+    def __init__(self, optimizer, cond, cond_p1, cond_p2, cond_pusher_1, logger=logging.getLogger(__name__)):
         SubHandler.__init__(self, logger)
         self.optimizer = optimizer
         self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1",
                          "c3t3": "Ma_2", "c3t4": "Mb_2", "c3t5": "Mc_2",
                          "c5t3": "Ma_3", "c5t4": "Mb_3", "c5t5": "Mc_3"}
         self.cond = cond
-        self.cond2 = cond2
-        self.cond3 = cond3
+        self.cond_p1 = cond_p1
+        self.cond_p2 = cond_p2
         self.cond_pusher_1= cond_pusher_1
+        
         
     def datachange_notification(self, node, val, data):
         """
@@ -69,15 +70,16 @@ class OptimizerSubHandler(SubHandler):
             self.cond.set()
             
         elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor" and val is True:
-            print("LOCK AND LOAD")
-            self.cond2.set()
+            print("LOCK AND LOAD1")
+            self.cond_p1.set()
             
         elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor" and val is True:
-            print("LOCK AND LOAD")
-            self.cond3.set()
+            print("LOCK AND LOAD2")
+            self.cond_p2.set()
 
         elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.rampa1.Enviar_nova.x" and val is True:
             print('UNLOAD SERVICES')
+            
             self.cond_pusher_1.set()
 
         elif str(node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id" and val != 0:
