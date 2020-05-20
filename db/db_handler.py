@@ -207,7 +207,7 @@ if __name__ == "__main__":
 	#db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
 	#db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
 
-	#db.update("transform_orders", where = {"maxdelay" : 300, "curr_state" : "pending"}, after_type = 8)
+	db.update("transform_orders", where = {"order_id" : 1}, batch_size = 8)
 
 	data = db.select("machines", print_table= True, order_by= "machine_id")
 	

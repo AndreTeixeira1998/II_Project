@@ -11,6 +11,7 @@ from db_handler import DB_handler
 #######################################################################################################
 #
 #   Order   
+#		―>order_number
 #		―>order_type
 #		―>time	(Removed for now)
 #
@@ -22,6 +23,9 @@ from db_handler import DB_handler
 #		   ―>before_type
 #		   ―>after_type
 #		   ―>max_delay
+#		   ―>state
+#		   ―>processed
+#		   ―>on_factory
 #
 #		Unload (inherits Order)
 #		   ―>order_type
@@ -30,6 +34,8 @@ from db_handler import DB_handler
 #		   ―>quantity
 #		   ―>piece_type
 #		   ―>destination
+#		   ―>state
+#		   ―>unloaded
 #
 #	   	Request_Stores (inherits Order)
 #		   ―>order_type
@@ -68,7 +74,8 @@ def strip_tags(html):
 
 
 class Order:
-	def __init__(self, order_type, db: DB_handler = None):
+	def __init__(self, order_number, order_type, db: DB_handler = None):
+		self.order_number = order_number
 		self._db = db
 		self.order_type = order_type
 		# self.time = datetime.now()
@@ -83,8 +90,7 @@ class Order:
 
 class TransformOrder(Order):
 	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, state = "pending", processed = 0, on_factory = 0, db : DB_handler= None, already_in_db = False):
-		super(TransformOrder, self).__init__(order_type, db)
-		self.order_number = order_number
+		super(TransformOrder, self).__init__(order_number, order_type, db)
 		self.before_type = before_type
 		self.after_type = after_type
 		self.quantity = quantity
@@ -121,6 +127,12 @@ class TransformOrder(Order):
 			return self.after_type
 		elif attribute == "max_delay":
 			return self.max_delay
+		elif attribute == "state":
+			return self.state
+		elif attribute == "processed":
+			return self.processed
+		elif attribute == "on_factory":
+			return self.on_factory
 		else:
 			return None
 
@@ -149,8 +161,7 @@ class TransformOrder(Order):
 		
 class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0,db : DB_handler = None, already_in_db = False):
-		super(UnloadOrder, self).__init__(order_type, db)
-		self.order_number = order_number
+		super(UnloadOrder, self).__init__(order_number, order_type, db)
 		self.piece_type = piece_type
 		self.destination = destination
 		self.quantity = quantity
@@ -181,6 +192,10 @@ class UnloadOrder(Order):
 			return self.piece_type
 		elif attribute == "destination":
 			return self.destination
+		elif attribute == "unloaded":
+			return self.unloaded
+		elif attribute == "state":
+			return self.state
 		else:
 			return None
 
@@ -196,21 +211,34 @@ class UnloadOrder(Order):
 		Updates the state of the order to processed in the DB
 		"""
 		if self._db != None:
-			self._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", processed = self.quantity)
+			self._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", unloaded = self.quantity)
 	
 	def update_processed(self, quant):
 		"""
 		Updates the number of pieces processed in the DB
 		"""
 		if self._db != None:
-			self._db.update("unload_orders", where = {"order_id" : self.order_number}, processed = quant)
+			self._db.update("unload_orders", where = {"order_id" : self.order_number}, unloaded = quant)
+
+
+
 
 
 class Request_StoresOrder(Order):
 	def __init__(self, order_type, address, port, db : DB_handler = None):
-		super(Request_StoresOrder, self).__init__(order_type, db)
+		order_number = 100
+		super(Request_StoresOrder, self).__init__(order_number, order_type, db)
 		self.address = address
 		self.port = port
+
+		# Untested
+		if self._db != None:
+			self._db.insert("stock_orders", order_id = self.order_number, start_time = "NOW()")
+
+	# Untested
+	def __del__(self):
+		if self._db != None:
+			self._db.update("stock_orders", where = {"order_id" : self.order_number}, end_time = "NOW()")
 
 	def get(self, attribute):
 		if attribute == "order_type":
