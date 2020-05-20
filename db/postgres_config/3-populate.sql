@@ -22,7 +22,7 @@ $$;
 do $$ --Insere as peças inicias do armazem
 	begin
 		for ptype in 1..9 loop
-			for i in 1..6 loop
+			for i in 1..54 loop
 				INSERT INTO pieces (piece_type,piece_state) VALUES (ptype,'stored');
 			end loop;
 		end loop;

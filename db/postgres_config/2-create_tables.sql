@@ -1,6 +1,6 @@
 SET search_path TO FACTORY;
 
-CREATE TYPE order_state AS ENUM ('processed','active', 'inactive', 'pending', 'cancelled', 'aborted');
+CREATE TYPE order_state AS ENUM ('processed','active', 'suspended', 'pending');
 CREATE TYPE piece_state AS ENUM ('pending', 'stored', 'assemblying', 'dispatched');
 
 CREATE TABLE orders(
