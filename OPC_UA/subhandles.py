@@ -84,7 +84,7 @@ class OptimizerSubHandler(SubHandler):
             print(f"Piece {val} complete")
             self.optimizer.tracker.mark_complete(int(val))
             self.optimizer.tracker.print_tracking_info()
-            #self.optimizer.tracker.print_order_status()
+            self.optimizer.tracker.print_order_status()
 
         for machine in self.encoding.keys():
             if machine in str(node.nodeid.Identifier):

@@ -100,8 +100,8 @@ class State:
 	def __init__(self, machines={}, pieces={}):
 		self.machines = machines
 		self.pieces = pieces
-		self.num_pieces = 0
-		self.pieces_optimized = 0
+		self.num_pieces = 1 #hotfix para o tracker
+		self.pieces_optimized = 1 #hotfix para o tracker
 
 	def __str__(self):
 		return f'{self.pieces_optimized}/{self.num_pieces}: {[(m.id, m.curr_tool, m.waiting_time) for m in self.machines.values()]}'
@@ -220,6 +220,7 @@ class Optimizer:
 
 
 	def order_handler(self, order, continue_unload_command=False):
+		self.tracker.add_order(order)
 		if isinstance(order, TransformOrder):
 			if order.before_type == 4 and order.after_type == 7:
 				print("Wait. That's Illegal")
