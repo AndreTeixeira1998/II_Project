@@ -82,7 +82,7 @@ class Order:
 		return data[2000:len(data)-348]
 
 class TransformOrder(Order):
-	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, db : DB_handler= None):
+	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, db : DB_handler= None, already_in_db = False):
 		super(TransformOrder, self).__init__(order_type, db)
 		self.order_number = order_number
 		self.before_type = before_type
@@ -91,7 +91,7 @@ class TransformOrder(Order):
 		self.max_delay = max_delay
 
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
-		if self._db != None:
+		if self._db != None and not already_in_db:
 			self._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
 												   before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity)
 
@@ -124,7 +124,7 @@ class TransformOrder(Order):
 
 		
 class UnloadOrder(Order):
-	def __init__(self, order_type, order_number, piece_type, destination, quantity, db : DB_handler = None):
+	def __init__(self, order_type, order_number, piece_type, destination, quantity, db : DB_handler = None, already_in_db = False):
 		super(UnloadOrder, self).__init__(order_type, db)
 		self.order_number = order_number
 		self.piece_type = piece_type
@@ -132,7 +132,7 @@ class UnloadOrder(Order):
 		self.quantity = quantity
 
 		#Atualiza a base de dados com novas ordens, caso haja uma base de dados
-		if self._db != None:
+		if self._db != None and not already_in_db:
 			self._db.insert(table = "unload_orders", order_id = self.order_number,
 												   destination = self.destination, curr_type = self.piece_type, batch_size = self.quantity)
 

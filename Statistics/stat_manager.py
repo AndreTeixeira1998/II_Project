@@ -29,13 +29,15 @@ class StatMan:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
 			else: time_beg = None
-			if item[3] != None: 
+			if item[3] == None: 
+				slack =  datetime.now() - item[1].replace(tzinfo = None) ##### Por algum motivo, a base de dados dá uma hora a menos, é preciso compensar
+				print("Date time now: ", datetime.now(), " Tempo de receção: ", item[1].replace(tzinfo = None))
+				time_end = None
+			else:
 				slack = item[3].replace(tzinfo = None) - item[1].replace(tzinfo = None)
 				time_end = item[3].time().strftime("%H:%M:%S")
-			else:
-				slack =  datetime.now() - item[1].replace(tzinfo = None)
-				time_end = None
 
+			print("max_delay = ", item[4], " time passed = ", int(slack.total_seconds()))
 			slack = item[4] - int(slack.total_seconds())
 			filtered_data.append([item[0], "Transform", item[5], item[9], "*in prod*", "*pend*", time_rec, time_beg, time_end, slack])
 

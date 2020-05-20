@@ -13,14 +13,34 @@ from GUI import GUI_V2
 from Optimizer.baby_optimizer import HorOptimizer
 from DB.db_handler import *
 
+def parse_from_db_unload(data, db):
+	parsed_order = []
+	for order in data:
+		parsed_order.append(UnloadOrder(order_type = "Unload", order_number = order[0], piece_type = order[6], destination = order[7], quantity = order[8], db = db, already_in_db= True))
+	return parsed_order
+
+def parse_from_db_transformation(data, db):
+	parsed_order = []
+	for order in data:
+		parsed_order.append(TransformOrder(order_type = "Transform", order_number = order[0], before_type = order[6], after_type = order[7], quantity = order[8], max_delay = order[4], db = db, already_in_db= True))
+	return parsed_order
+
 def test_thread(optimizer):
 	while True:
 		#print(f'{optimizer.state.num_pieces} {optimizer.dispatch_queue}')
 		time.sleep(1)
 
-def compute_orders(optimizer, q_udp_in):
+def compute_orders(optimizer, q_udp_in, pending_orders):
+	print("Ordens pendentes: ", len(pending_orders))
+	for o in pending_orders:
+		if o.order_type == 'Transform':
+			optimizer.order_handler(o)
+			optimizer.optimize_all_pieces()
+		elif o.order_type == 'Unload':
+			optimizer.order_handler(o)
+	
 	while True:
-		while not q_udp_in.empty():
+		while  not q_udp_in.empty():
 			order = q_udp_in.get()
 			for o in order:
 				if o.order_type == 'Transform':
@@ -60,35 +80,38 @@ def run(optimizer):
 	loop.run_until_complete(opc_client_run(optimizer))
 	loop.close()
 
-#	https://docs.python.org/3.8/library/signal.html
-#	https://docs.python.org/3/library/asyncio-queue.html
 if __name__ == "__main__":
 	db = DB_handler()
 	optimizer = HorOptimizer()
 	win = GUI_V2(db)
+
+	# Para usar na persistencia, verifica se há ordens na base de dados que faltam processar
+	pending_orders = []
+	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "active", "curr_state" : "pending"}),db))
+	pending_orders.extend(parse_from_db_transformation(db.select("transform_orders", where= { "curr_state" : "active", "curr_state" : "pending"}),db)) #, "curr_state" : "suspended"
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
 	t_order_rec = Thread(target = order_receive, args = (q_udp, db, True))
 	t_order_rec.name = "Thread_client_receive"
 	t_opc_run = Thread(target = run, args = (optimizer, ))
 	t_opc_run.name = "Thread_opc_run"
-	t_compute_orders = Thread(target=compute_orders, args=(optimizer, q_udp,))
+	t_compute_orders = Thread(target=compute_orders, args=(optimizer, q_udp, pending_orders))
 	t_compute_orders.name = "Thread_compute_order"
 	t_update_dispatch = Thread(target=update_dispatch, args=(optimizer,))
 	t_update_dispatch.name = "Thread_update_dispatch"
 	t_test = Thread(target=test_thread, args=(optimizer,))
 	t_test.name = "Test"
 
-	threads = [t_order_rec, t_opc_run, t_compute_orders, t_update_dispatch, t_test]
+	threads = [t_order_rec, t_opc_run, t_compute_orders, t_update_dispatch]
 
 	t_opc_run.start()
 	t_order_rec.start()
 
-
-
 	t_compute_orders.start()
 	t_update_dispatch.start()
-	t_test.start()
+
+	# threads.append(t_test)
+	# t_test.start()
 
 	#win.open_GUI()
 

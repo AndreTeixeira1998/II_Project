@@ -270,4 +270,6 @@ if __name__ == "__main__":
 	db = DB_handler()
 	win = GUI_V2(db)
 
+	db.insert("transform_orders", order_id = 500, maxdelay=500, start_time = "NOW()",before_type = 1, after_type = 3)
+
 	win.open_GUI()

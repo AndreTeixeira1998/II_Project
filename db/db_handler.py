@@ -201,7 +201,6 @@ class DB_handler:
 
 		return counted
 
-
 if __name__ == "__main__":
 	db = DB_handler()
 
