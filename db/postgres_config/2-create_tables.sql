@@ -16,7 +16,8 @@ CREATE TABLE transform_orders(
 	before_type INTEGER NOT NULL,
 	after_type INTEGER NOT NULL,
 	batch_size INTEGER DEFAULT (1),
-	produced INTEGER DEFAULT (0) CHECK (produced <= batch_size)
+	produced INTEGER DEFAULT (0) CHECK (produced <= batch_size),
+	on_factory INTEGER DEFAULT (0) CHECK (produced <= batch_size)
 )INHERITS (orders);
 
 CREATE TABLE unload_orders(

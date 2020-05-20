@@ -24,12 +24,19 @@ class Tracker:
 		self.order_tracking[order] = 0
 
 	def mark_complete(self, piece_id):
+		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
-		self.order_tracking[self.state.pieces[piece_id].order] += 1
+		self.order_tracking[curr_order] += 1
+		quantity = self.order_tracking[curr_order]
+		if quantity == curr_order.get("quantity"):
+			curr_order.order_complete()
+		else:
+			curr_order.update_processed(quantity)
 
 	def mark_dispatched(self, piece_id):
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
+		self.state.pieces[piece_id].order.order_activated()
 
 	def print_tracking_info(self):
 		print(f'Pieces on transit: {[pieceid for pieceid in self.pieces_on_transit.keys()]}')
@@ -38,7 +45,6 @@ class Tracker:
 	def print_order_status(self):
 		for order in self.order_tracking.keys():
 			print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
-
 
 class Recipe:
 	def __init__(self, before_type, end_type, trans_path):

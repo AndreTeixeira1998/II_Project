@@ -82,13 +82,17 @@ class Order:
 		return data[2000:len(data)-348]
 
 class TransformOrder(Order):
-	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, db : DB_handler= None, already_in_db = False):
+	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, state = "pending", processed = 0, on_factory = 0, db : DB_handler= None, already_in_db = False):
 		super(TransformOrder, self).__init__(order_type, db)
 		self.order_number = order_number
 		self.before_type = before_type
 		self.after_type = after_type
 		self.quantity = quantity
 		self.max_delay = max_delay
+		self.state = state
+		self.processed = processed
+		self.on_factory = on_factory
+
 
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		if self._db != None and not already_in_db:
@@ -120,16 +124,38 @@ class TransformOrder(Order):
 		else:
 			return None
 
+	def order_activated(self):
+		"""
+		Updates the state of the order to active in the DB
+		"""
+		if self._db != None:
+			self._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "active")
+	
+	def order_complete(self):
+		"""
+		Updates the state of the order to processed in the DB
+		"""
+		if self._db != None:
+			self._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", processed = self.quantity)
+	
+	def update_processed(self, quant):
+		"""
+		Updates the number of pieces processed in the DB
+		"""
+		if self._db != None:
+			self._db.update("transform_orders", where = {"order_id" : self.order_number}, processed = quant)
 
 
 		
 class UnloadOrder(Order):
-	def __init__(self, order_type, order_number, piece_type, destination, quantity, db : DB_handler = None, already_in_db = False):
+	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0,db : DB_handler = None, already_in_db = False):
 		super(UnloadOrder, self).__init__(order_type, db)
 		self.order_number = order_number
 		self.piece_type = piece_type
 		self.destination = destination
 		self.quantity = quantity
+		self.state = state
+		self.unloaded = unloaded
 
 		#Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		if self._db != None and not already_in_db:
@@ -157,6 +183,28 @@ class UnloadOrder(Order):
 			return self.destination
 		else:
 			return None
+
+	def order_activated(self):
+		"""
+		Updates the state of the order to active in the DB
+		"""
+		if self._db != None:
+			self._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "active")
+	
+	def order_complete(self):
+		"""
+		Updates the state of the order to processed in the DB
+		"""
+		if self._db != None:
+			self._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", processed = self.quantity)
+	
+	def update_processed(self, quant):
+		"""
+		Updates the number of pieces processed in the DB
+		"""
+		if self._db != None:
+			self._db.update("unload_orders", where = {"order_id" : self.order_number}, processed = quant)
+
 
 class Request_StoresOrder(Order):
 	def __init__(self, order_type, address, port, db : DB_handler = None):

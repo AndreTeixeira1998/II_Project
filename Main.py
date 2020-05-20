@@ -16,13 +16,17 @@ from DB.db_handler import *
 def parse_from_db_unload(data, db):
 	parsed_order = []
 	for order in data:
-		parsed_order.append(UnloadOrder(order_type = "Unload", order_number = order[0], piece_type = order[6], destination = order[7], quantity = order[8], db = db, already_in_db= True))
+		parsed_order.append(UnloadOrder(order_type = "Unload", order_number = order[0], piece_type = order[6], 
+										destination = order[7], quantity = order[8], db = db, unload = order[9], 
+										state = order[5], already_in_db= True))
 	return parsed_order
 
 def parse_from_db_transformation(data, db):
 	parsed_order = []
 	for order in data:
-		parsed_order.append(TransformOrder(order_type = "Transform", order_number = order[0], before_type = order[6], after_type = order[7], quantity = order[8], max_delay = order[4], db = db, already_in_db= True))
+		parsed_order.append(TransformOrder(order_type = "Transform", order_number = order[0], before_type = order[6], 
+											after_type = order[7], quantity = order[8], max_delay = order[4], processed = order[9], 
+											state = order[5], db = db, already_in_db= True))
 	return parsed_order
 
 def test_thread(optimizer):
