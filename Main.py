@@ -40,7 +40,8 @@ def compute_orders(optimizer, q_udp_in, pending_orders):
 			optimizer.order_handler(o)
 	
 	while True:
-		while  not q_udp_in.empty():
+#		print('Update orders')
+		while not q_udp_in.empty():
 			order = q_udp_in.get()
 			for o in order:
 				if o.order_type == 'Transform':
@@ -52,7 +53,8 @@ def compute_orders(optimizer, q_udp_in, pending_orders):
 
 def update_dispatch(optimizer):
 	while True:
-		for machine in optimizer.state.machines.values():
+#		print('Update dispatch')
+		for machine in reversed(optimizer.state.machines.values()):
 			#print(f'{machine}: {machine.op_list}')
 			if machine.is_free and machine.op_list:
 				next_op = machine.op_list[0]
@@ -66,18 +68,13 @@ def update_dispatch(optimizer):
 						machine.make_unavailable()
 				else:
 					machine.make_unavailable()
-		time.sleep(0.1)
+		time.sleep(0.01)
 
 
 def run(optimizer):
-	
-	# loop = asyncio.get_event_loop()
-	#	Para multi thrading...acho
-	#	https://stackoverflow.com/questions/46727787/runtimeerror-there-is-no-current-event-loop-in-thread-in-async-apscheduler
-	loop = asyncio.new_event_loop() 
-	asyncio.set_event_loop(loop)
-	loop.set_debug(True)
-	loop.run_until_complete(opc_client_run(optimizer))
+	loop = asyncio.new_event_loop()
+	loop.run_until_complete(opc_client_run(optimizer, loop))
+	loop.run_forever()
 	loop.close()
 
 if __name__ == "__main__":
