@@ -136,14 +136,14 @@ class TransformOrder(Order):
 		Updates the state of the order to processed in the DB
 		"""
 		if self._db != None:
-			self._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", processed = self.quantity)
+			self._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity)
 	
 	def update_processed(self, quant):
 		"""
 		Updates the number of pieces processed in the DB
 		"""
 		if self._db != None:
-			self._db.update("transform_orders", where = {"order_id" : self.order_number}, processed = quant)
+			self._db.update("transform_orders", where = {"order_id" : self.order_number}, produced = quant)
 
 
 		

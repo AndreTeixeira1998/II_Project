@@ -24,6 +24,7 @@ class Tracker:
 		self.order_tracking[order] = 0
 
 	def mark_complete(self, piece_id):
+		print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
@@ -35,6 +36,7 @@ class Tracker:
 			curr_order.update_processed(quantity)
 
 	def mark_dispatched(self, piece_id):
+		print(f'Mark_dispatched {piece_id}')
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
 		self.state.pieces[piece_id].order.order_activated()
 
@@ -439,7 +441,7 @@ class HorOptimizer(Optimizer):
 						total_wait_time = state.machines[curr_m].waiting_time
 					else:
 						state.machines[curr_m].waiting_time += trans.duration
-						total_wait_time = state.machines[curr_m].waiting_timen
+						total_wait_time = state.machines[curr_m].waiting_time
 
 			prev_m = curr_m
 			prev_t = curr_t
