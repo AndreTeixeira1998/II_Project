@@ -133,9 +133,12 @@ class DB_handler:
 		"""Retorna dados da tabela. Está como default retirar todas as colunas. É possível selecionar vários dados especificos com o where.\n
 		O print_table permite imprimir a tabela no terminal (mais para efeitos de debugging ou demonstrativos)\n
 		Exemplo de uso:
-			data = db.select(table= "machines", content = ["machine_type", "transformation_cell"], , order_by= "machine_id", print_table = True)\n
+			data = db.select(table= "machines", content = ["machine_type", "transformation_cell"], order_by= "machine_id", print_table = True)\n
 		Para várias condições:
 			data = db.select("transform_orders", where = {"maxdelay" : 300, "batch_size" : 10})
+		Para várias condições na mesma coluna, é preciso colocar a condição com um numero à frente da coluna
+		(O digito tem que ser diferentes se forem mais que 2 repetições):
+			where = {"curr_state" : "pending", "curr_state1" : "active"} 
 		"""
 		colnames = self._get_columns(table)
 
@@ -167,6 +170,8 @@ class DB_handler:
 			condition = []
 			Query += " WHERE "
 			for key,value in where.items():
+				if key[-1].isdigit():
+					key = key[:-1] 
 				Query += key + "=%s AND "
 				condition.append(str(value))
 			Query = Query[:-5]
@@ -204,11 +209,11 @@ class DB_handler:
 if __name__ == "__main__":
 	db = DB_handler()
 
-	#db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
-	#db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
+	db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
+	db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
 
-	db.update("transform_orders", where = {"order_id" : 1}, batch_size = 8)
-
-	data = db.select("machines", print_table= True, order_by= "machine_id")
+	# db.update("transform_orders", where = {"order_id" : 1}, batch_size = 8)
+	dic = {"curr_state" : "active", "curr_state1": "pending"}
+	data = db.select("transform_orders", where = dic,  print_table= True, order_by= "machine_id")
 	
 	print(data)
