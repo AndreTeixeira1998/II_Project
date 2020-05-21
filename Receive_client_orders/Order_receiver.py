@@ -21,13 +21,13 @@ def answer_request(request):
 
 	
 
-def order_receive(out_q, db = None, notify_new_order = False):
+def order_receive(out_q, notify_new_order = False):
 	s = socket(AF_INET,SOCK_DGRAM)
 	s.bind((host,port))
 
 	while True:
 		data,addr_port = s.recvfrom(buf)
-		received_orders = parse(data, addr_port[0], addr_port[1], db)
+		received_orders = parse(data, addr_port[0], addr_port[1])
 		for index,rec in enumerate(received_orders):
 			if rec.get("order_type") == "Request_Stores":
 				#if notify_new_order == True:
@@ -61,7 +61,9 @@ def _run_example():
 	q = Queue()
     
 	db = DB_handler()
-	t_order_rec = Thread(target = order_receive, args = (q,db,  ))
+	Order.db = db
+
+	t_order_rec = Thread(target = order_receive, args = (q,  ))
 	t_Communication_thread_example = Thread(target = _Communication_thread_example, args = (q, ))
 	t_order_rec.start()
 	t_Communication_thread_example.start()
