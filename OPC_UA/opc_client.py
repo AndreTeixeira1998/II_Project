@@ -20,6 +20,7 @@ SUB_PERIOD = 20  # Publishing interval in miliseconds
 LOG_FILENAME = 'opc_client.log'
 
 logging.basicConfig(level=logging.DEBUG, filename=LOG_FILENAME)
+logging.FileHandler(LOG_FILENAME, 'w+')
 _logger = logging.getLogger('asyncua')
 
 # Some Global Vars
@@ -71,21 +72,23 @@ class OnePiece():
 
 
 async def write(var_write, optimizer, cond, block_pieces):
-	#print("######################debug: write() started")
+	# print("######################debug: write() started")
 	sender = OnePiece()
 
-	if optimizer.dispatch_queue:
-		piece = optimizer.dispatch_queue.popleft()
+	while optimizer.dispatch_queue:
 		await cond.wait()
+		piece = optimizer.dispatch_queue.popleft()
+		#print("id: ", piece.id, " path: ", piece.path)
 		# await block_pieces.wait()
 		await sender.send_path(piece, var_write)
 		print(f"Dispatching piece no {piece.id}: ")
 		optimizer.tracker.mark_dispatched(piece.id)
 		cond.clear()
+		await asyncio.sleep(0.5)
 
 
 async def swap_tools(tool_nodes, optimizer):
-	#print('#debug swap tools')
+	# print('#debug swap tools')
 	sender = OnePiece()
 	for machine in optimizer.state.machines.values():
 		if machine.next_tool:
@@ -103,50 +106,56 @@ async def read(client, vars, handler):
 	await sub.subscribe_data_change(vars)
 
 
-
-async def charge_P1(client, cond2, charge_var):
-	#print('#debug Charge P1')
+async def charge_P1(client, cond_p1, charge_var):
+	# print('#debug Charge P1')
 	sender = OnePiece()
 	dest_path = [39, 41, 42, 43, 44, 45, 46, 38, 31, 26, 19, 14, 7, 2]
 	var_load_path = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].path")
-	var_load_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].tipo_atual")
+	var_load_tipo_atual = client.get_node(
+		"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].tipo_atual")
 	# var_load_id
 
-	if (await charge_var.get_value()):
-		await cond2.wait()
+	# if (await charge_var.get_value()):
+	if cond_p1:
+		# await cond_p1.wait()
 		# print("OOOOOOOOOOOOOOOOOOOOOOOOOOOO", await charge_var.get_value())
 		# await self.write_int16(var_write["id"], piece.id)  # set node value using implicit data type
 		await sender.write_int16(var_load_tipo_atual, 1)
 		await sender.write_array_int16(var_load_path, dest_path,
 									   path_length)  # set node value using implicit data type
-		cond2.clear()
+
+		cond_p1.clear()
 
 
-async def charge_P2(client, cond3, charge_var):
-	#print('#debug Charge P2')
+async def charge_P2(client, cond_p2, charge_var):
+	# print('#debug Charge P2')
 	sender = OnePiece()
 	dest_path = [46, 38, 31, 26, 19, 14, 7, 2]
 	var_load_path = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].path")
-	var_load_tipo_atual = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].tipo_atual")
+	var_load_tipo_atual = client.get_node(
+		"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].tipo_atual")
 
-	if (await charge_var.get_value()):
-		await cond3.wait()
+	# if (await charge_var.get_value()):
+	# await cond_p2.wait()
+	if cond_p2:
 		# print("OOOOOOOOOOOOOOOOOOOOOOOOOOOO", await charge_var.get_value())
 		await sender.write_int16(var_load_tipo_atual, 2)
 		await sender.write_array_int16(var_load_path, dest_path,
 									   path_length)  # set node value using implicit data type
-		cond3.clear()
-
+		await asyncio.sleep(2)
+		cond_p2.clear()
 
 
 async def unload(optimizer, cond_pusher_1):
-	#print('#debug UNLOAD')
-	while optimizer.pusher.dispatch_queue_1:
+	# print('#debug UNLOAD')
+	if optimizer.pusher.dispatch_queue_1:
 		await cond_pusher_1.wait()
+		optimizer.pusher.count = 0
 		order_ = optimizer.pusher.dispatch_queue_1.pop()
 		print("quantidade em falta: ", order_.quantity)
 		optimizer.order_handler(order_, continue_unload_command=True)
 		cond_pusher_1.clear()
+		await asyncio.sleep(1)
 
 
 async def opc_client_run(optimizer, loop):
@@ -183,7 +192,6 @@ async def opc_client_run(optimizer, loop):
 			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c5t4") \
 			, client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.c5t5")
 
-
 		m_steps = await ma_1.get_children() + await mb_1.get_children() + await mc_1.get_children()
 		m_steps += await ma_2.get_children() + await mb_2.get_children() + await mc_2.get_children()
 		m_steps += await ma_3.get_children() + await mb_3.get_children() + await mc_3.get_children()
@@ -193,7 +201,6 @@ async def opc_client_run(optimizer, loop):
 			nodes = await step.get_children()
 			for node in nodes:
 				m_vars.append(node)
-
 
 		tool_nodes = {
 			'Ma_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c1t3"),
@@ -222,27 +229,26 @@ async def opc_client_run(optimizer, loop):
 		m_vars.append(warehouse_in)
 
 		cond = asyncio.Event()
-		cond2 = asyncio.Event()
-		cond3 = asyncio.Event()
+		cond_p1 = asyncio.Event()
+		cond_p2 = asyncio.Event()
 
 		cond_pusher_1 = asyncio.Event()
-		# fazer dic
 
-		handler = OptimizerSubHandler(optimizer, cond, cond2, cond3, cond_pusher_1, _logger)
+		handler = OptimizerSubHandler(optimizer, cond, cond_p1, cond_p2, cond_pusher_1, _logger)
 
 		print("MES-PLC OpcUA Connection established")
 
 		await read(client, m_vars, handler)
 
-		#loop = asyncio.get_event_loop()
+		# loop = asyncio.get_event_loop()
 
 		while True:
 			await asyncio.gather(
 				write(var_write, optimizer, cond, optimizer.block_pieces),
-				charge_P1(client, cond2, vars_P1_charge),
-				charge_P2(client, cond3, vars_P2_charge),
+				charge_P1(client, cond_p1, vars_P1_charge),
+				charge_P2(client, cond_p2, vars_P2_charge),
 				swap_tools(tool_nodes, optimizer),
-				#unload(optimizer, cond_pusher_1)
+				unload(optimizer, cond_pusher_1)
 			)
 
 

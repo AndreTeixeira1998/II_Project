@@ -6,7 +6,7 @@ from queue import Queue
 
 host = "127.0.0.1"
 port = 54321
-buf = 1024
+buf = 2048
 addr = (host,port)
 
 
@@ -38,7 +38,8 @@ def order_receive(out_q, notify_new_order = False):
 		out_q.put(received_orders)
 		if notify_new_order == True:
 			for ord in received_orders:
-				print("Data received: ", ord.get("order_type"))
+				pass
+				#print("Data received: ", ord.get("order_type"))
 
 def _Communication_thread_example(in_q):
 	orders = []

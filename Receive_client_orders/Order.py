@@ -109,11 +109,12 @@ class TransformOrder(Order):
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
-		pass
+		# pass
 		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
 		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
 		if _db != None:
 			_db.update(table = "transform_orders", where = {"order_id": self.order_number}, curr_state = "processed")
+
 
 
 	def get(self, attribute):
@@ -222,6 +223,7 @@ class UnloadOrder(Order):
 		"""
 		if _db != None:
 			_db.update("unload_orders", where = {"order_id" : self.order_number}, unloaded = quant)
+
 
 
 
