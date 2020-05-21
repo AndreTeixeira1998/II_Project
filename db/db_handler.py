@@ -129,7 +129,7 @@ class DB_handler:
 		except(Exception, psycopg2.Error) as error:
 			print("Error while connecting to PostgreSQL", error)
 
-	def select(self, table, content = "*", where = None,  order_by = "", print_table = False):
+	def select(self, table, content = "*", where = None,  order_by = "", operand = "AND", print_table = False):
 		"""Retorna dados da tabela. Está como default retirar todas as colunas. É possível selecionar vários dados especificos com o where.\n
 		O print_table permite imprimir a tabela no terminal (mais para efeitos de debugging ou demonstrativos)\n
 		Exemplo de uso:
@@ -138,7 +138,7 @@ class DB_handler:
 			data = db.select("transform_orders", where = {"maxdelay" : 300, "batch_size" : 10})
 		Para várias condições na mesma coluna, é preciso colocar a condição com um numero à frente da coluna
 		(O digito tem que ser diferentes se forem mais que 2 repetições):
-			where = {"curr_state" : "pending", "curr_state1" : "active"} 
+			where = {"curr_state" : "pending", "curr_state1" : "active"} e usar o operand = "OR"
 		"""
 		colnames = self._get_columns(table)
 
@@ -172,9 +172,12 @@ class DB_handler:
 			for key,value in where.items():
 				if key[-1].isdigit():
 					key = key[:-1] 
-				Query += key + "=%s AND "
+				Query += key + "=%s " + operand + " "
 				condition.append(str(value))
-			Query = Query[:-5]
+			if operand !="OR":
+				Query = Query[:-5]
+			else:
+				Query = Query[:-4]
 
 			if order_by in colnames:
 				Query += " ORDER BY " + order_by
@@ -209,11 +212,11 @@ class DB_handler:
 if __name__ == "__main__":
 	db = DB_handler()
 
-	db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
-	db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
+	# db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
+	# db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
 
-	# db.update("transform_orders", where = {"order_id" : 1}, batch_size = 8)
+	db.update("transform_orders", where = {"order_id" : 1}, curr_state = "active" ,batch_size = 8)
 	dic = {"curr_state" : "active", "curr_state1": "pending"}
-	data = db.select("transform_orders", where = dic,  print_table= True, order_by= "machine_id")
+	data = db.select("transform_orders", where = dic, operand= "OR" ,print_table= True, order_by= "order_id")
 	
 	print(data)
