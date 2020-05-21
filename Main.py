@@ -168,6 +168,8 @@ if __name__ == "__main__":
 	optimizer = HorOptimizer()
 	win = GUI_V2(db)
 
+	Order._db = db
+
 	# Para usar na persistencia, verifica se há ordens na base de dados que faltam processar
 	pending_orders = []
 	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "pending", "curr_state" : "active"}),db))
