@@ -24,6 +24,7 @@ class Tracker:
 		self.order_tracking[order] = 0
 
 	def mark_complete(self, piece_id):
+		print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
@@ -35,6 +36,7 @@ class Tracker:
 			curr_order.update_processed(quantity)
 
 	def mark_dispatched(self, piece_id):
+		print(f'Mark_dispatched {piece_id}')
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
 		self.state.pieces[piece_id].order.order_activated()
 
@@ -45,6 +47,7 @@ class Tracker:
 	def print_order_status(self):
 		for order in self.order_tracking.keys():
 			print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
+
 
 class Recipe:
 	def __init__(self, before_type, end_type, trans_path):
@@ -62,7 +65,7 @@ class Pusher():
 		self.dispatch_queue_2 = collections.deque([])
 		self.dispatch_queue_3 = collections.deque([])
 
-		self.virginity = [] # wut
+		self.virginity = []  # wut
 
 		self.count = 0
 
@@ -80,6 +83,7 @@ class Pusher():
 			# queue3= self.dispatch_queue_3
 			# print(queue3)
 			return self.dispatch_queue_3.append(order)
+
 
 class Piece():
 	'''
@@ -107,8 +111,8 @@ class State:
 	def __init__(self, machines={}, pieces={}):
 		self.machines = machines
 		self.pieces = pieces
-		self.num_pieces = 1 #hotfix para o tracker
-		self.pieces_optimized = 1 #hotfix para o tracker
+		self.num_pieces = 1  # hotfix para o tracker
+		self.pieces_optimized = 1  # hotfix para o tracker
 
 	def __str__(self):
 		return f'{self.pieces_optimized}/{self.num_pieces}: {[(m.id, m.curr_tool, m.waiting_time) for m in self.machines.values()]}'
@@ -218,7 +222,6 @@ class Optimizer:
 			print("Shortest FINAL path {}, ETA = {} s".format([conveyor.id for conveyor in final_path], final_duration))
 		return [conveyor.id for conveyor in final_path]
 
-
 	def compute_conveyor(self, graph, frm: str, to: str, search=dijkstra_conveyors, debug=False):
 		duration, path = search(graph, frm, to)
 		if debug:
@@ -242,51 +245,62 @@ class Optimizer:
 		elif isinstance(order, UnloadOrder):
 			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
 						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
+
+			'''
 			# verifica se ? a primeira vez da senhora
 			if order.destination not in self.pusher.virginity:
 				self.pusher.virginity.append(order.destination)
 				# print(self.pusher.virginity)
-				for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-					self.state.pieces[piece_number] = \
-						(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
-							   order=order))
+				
+				'''
+			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+				self.state.pieces[piece_number] = \
+					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
+						   order=order))
 
-					self.pusher.count += 1
-					if self.pusher.count <= 4:
-						self.state.num_pieces += 1
-						self.dispatch_queue.appendleft(self.state.pieces[piece_number])
-					# self.dispatch_queue.append(self.state.pieces[piece_number])
+				self.pusher.count += 1
+				if self.pusher.count <= 3:
 
-					else:
-						self.pusher.count = 0
-						# print("===>state:  ", self.state.num_pieces)
-						order.quantity = order.quantity - 4
-						self.pusher.push(order)
-						break
+					self.state.num_pieces += 1
+					self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+				# self.dispatch_queue.append(self.state.pieces[piece_number])
 
-			else:
-				if (continue_unload_command):
-					for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-						self.state.pieces[piece_number] = \
-							(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None,
-								   tools=None, order=order))
-
-						self.pusher.count += 1
-						if self.pusher.count <= 3:
-							self.state.num_pieces += 1
-
-							self.dispatch_queue.appendleft(self.state.pieces[piece_number])
-						# self.dispatch_queue.append(self.state.pieces[piece_number])
-
-
-						else:
-							self.pusher.count = 0
-							order.quantity = order.quantity - 3
-							self.pusher.push(order)
-							break
 				else:
-					# push para a fila
+
+					print("===>state num:  ", self.state.num_pieces)
+					print("===>state quantity:  ", order.quantity)
+					order.quantity = order.quantity - 3
+					print("===>state restantes:  ", order.quantity)
 					self.pusher.push(order)
+					break
+			print("Pusher count: ", self.pusher.count)
+
+
+	'''         
+	            else:
+	                if (continue_unload_command):
+	                    for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+	                        self.state.pieces[piece_number] = \
+	                            (Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None,
+	                                   tools=None, order=order))
+	
+	                        self.pusher.count += 1
+	                        if self.pusher.count <= 3:
+	                            self.state.num_pieces += 1
+	
+	                            self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+	                        # self.dispatch_queue.append(self.state.pieces[piece_number])
+	
+	
+	                        else:
+	                            self.pusher.count = 0
+	                            order.quantity = order.quantity - 3
+	                            self.pusher.push(order)
+	                            break
+	                else:
+	                    # push para a fila
+	                    self.pusher.push(order)
+	'''
 
 
 class BabyOptimizer(Optimizer):
@@ -439,7 +453,7 @@ class HorOptimizer(Optimizer):
 						total_wait_time = state.machines[curr_m].waiting_time
 					else:
 						state.machines[curr_m].waiting_time += trans.duration
-						total_wait_time = state.machines[curr_m].waiting_timen
+						total_wait_time = state.machines[curr_m].waiting_time
 
 			prev_m = curr_m
 			prev_t = curr_t
@@ -463,7 +477,7 @@ class HorOptimizer(Optimizer):
 				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
 				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
 				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
-				#self.state.pieces_optimized += 1
+			# self.state.pieces_optimized += 1
 			self.state.pieces_optimized += 1
 		print('Optimized:')
 		self.print_machine_schedule()

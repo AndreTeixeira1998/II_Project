@@ -110,6 +110,7 @@ def optimizer_init(optimizer):
 
 	print('Automatic recipes loaded.')
 
+	# Custom Recipes
 	optimizer.recipes['1->9'].append([Transform(optimizer.state.machines[f'Ma_1'], 'T1', 15),
 							  			Transform(optimizer.state.machines[f'Ma_2'], 'T2', 15),
 							 				Transform(optimizer.state.machines[f'Ma_3'], 'T3', 15)])
