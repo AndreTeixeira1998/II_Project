@@ -38,7 +38,8 @@ def order_receive(out_q, db = None, notify_new_order = False):
 		out_q.put(received_orders)
 		if notify_new_order == True:
 			for ord in received_orders:
-				print("Data received: ", ord.get("order_type"))
+				pass
+				#print("Data received: ", ord.get("order_type"))
 
 def _Communication_thread_example(in_q):
 	orders = []

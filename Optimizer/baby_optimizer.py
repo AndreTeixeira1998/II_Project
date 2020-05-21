@@ -1,6 +1,7 @@
 import time
 import asyncio
 import collections
+import copy
 from Optimizer.transfgraph import TransfGraph, Transform, Machine, Operation
 from Optimizer.search import dijkstra
 from Optimizer.pathing.pathgraph import Conveyor, PathGraph
@@ -24,7 +25,7 @@ class Tracker:
 		self.order_tracking[order] = 0
 
 	def mark_complete(self, piece_id):
-		print(f'Mark_completed {piece_id}')
+		#print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
@@ -33,20 +34,24 @@ class Tracker:
 		if quantity == curr_order.get("quantity"):
 			curr_order.order_complete()
 		else:
+			print('Updating processed')
 			curr_order.update_processed(quantity)
+			print('Updated')
 
 	def mark_dispatched(self, piece_id):
-		print(f'Mark_dispatched {piece_id}')
+		#print(f'Mark_dispatched {piece_id}')
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
 		self.state.pieces[piece_id].order.order_activated()
 
 	def print_tracking_info(self):
-		print(f'Pieces on transit: {[pieceid for pieceid in self.pieces_on_transit.keys()]}')
-		print(f'Pieces complete: {[pieceid for pieceid in self.pieces_complete.keys()]}')
+		pass
+		#print(f'Pieces on transit: {[pieceid for pieceid in self.pieces_on_transit.keys()]}')
+		#print(f'Pieces complete: {[pieceid for pieceid in self.pieces_complete.keys()]}')
 
 	def print_order_status(self):
 		for order in self.order_tracking.keys():
-			print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
+			pass
+			#print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
 
 
 class Recipe:
@@ -276,33 +281,6 @@ class Optimizer:
 			print("Pusher count: ", self.pusher.count)
 
 
-	'''         
-	            else:
-	                if (continue_unload_command):
-	                    for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
-	                        self.state.pieces[piece_number] = \
-	                            (Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None,
-	                                   tools=None, order=order))
-	
-	                        self.pusher.count += 1
-	                        if self.pusher.count <= 3:
-	                            self.state.num_pieces += 1
-	
-	                            self.dispatch_queue.appendleft(self.state.pieces[piece_number])
-	                        # self.dispatch_queue.append(self.state.pieces[piece_number])
-	
-	
-	                        else:
-	                            self.pusher.count = 0
-	                            order.quantity = order.quantity - 3
-	                            self.pusher.push(order)
-	                            break
-	                else:
-	                    # push para a fila
-	                    self.pusher.push(order)
-	'''
-
-
 class BabyOptimizer(Optimizer):
 	'''
 	Simple optimizer for multiple isolated cells .
@@ -352,24 +330,24 @@ class BabyOptimizer(Optimizer):
 		return duration, path, trans_path
 
 
-def optimize_all_pieces(self):
-	for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
-		if (self.state.pieces[piece_id].order.order_type == "Transform"):
-			# Todo: Change Piece types to int
-			before_type = self.state.pieces[piece_id].order.before_type
-			after_type = self.state.pieces[piece_id].order.after_type
-			_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
-			self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
-			self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-			self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
-			self.state.pieces_optimized += 1
-		else:
-			# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
-			self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
-			self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
-			self.state.pieces_optimized += 1
+	def optimize_all_pieces(self):
+		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
+			if (self.state.pieces[piece_id].order.order_type == "Transform"):
+				# Todo: Change Piece types to int
+				before_type = self.state.pieces[piece_id].order.before_type
+				after_type = self.state.pieces[piece_id].order.after_type
+				_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
+				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
+				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
+				self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
+				self.state.pieces_optimized += 1
+			else:
+				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
+				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
+				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
+				self.state.pieces_optimized += 1
 
-	return self.state
+		return self.state
 
 
 class HorOptimizer(Optimizer):
@@ -383,7 +361,8 @@ class HorOptimizer(Optimizer):
 
 	def compute_transform(self, piece_id, frm: int, to: int, search=dijkstra, debug=False, state=None):
 		# TODO Add check for non valid transforms
-		state = self.state
+		if state is None:
+			state = self.state
 		recipes = self.recipes[f'{frm}->{to}']
 		curr_best = 99999
 		curr_best_idx = 0
@@ -462,6 +441,30 @@ class HorOptimizer(Optimizer):
 			state.machines[curr_m].add_op(Operation(piece_id, trans, step, total_machine_wait))
 			state.machines[curr_m].curr_tool = curr_t
 		return best_seq
+
+	def simulate(self, order):
+		simulated_state = copy.deepcopy(self.state)
+		for piece_id in range(order.quantity):
+			self.compute_transform(piece_id, order.before_type, order.after_type, debug=False, state=simulated_state)
+		cost = simulated_state.get_value()
+		return simulated_state, cost
+
+	def optimize_single_order(self, order: TransformOrder):
+		for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
+			if order.order_type == 'Transform':
+				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
+				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
+				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
+				self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
+			elif order.order_type == 'Unload':
+				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
+				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
+				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
+			# self.state.pieces_optimized += 1
+			self.state.pieces_optimized += 1
+		#print('Optimized:')
+		#self.print_machine_schedule()
+		return self.state
 
 	def optimize_all_pieces(self):
 		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):

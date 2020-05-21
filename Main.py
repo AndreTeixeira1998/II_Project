@@ -55,6 +55,84 @@ def compute_orders(optimizer, q_udp_in, pending_orders):
 					optimizer.order_handler(o)
 			#optimizer.print_machine_schedule()
 
+
+check_stock = True
+def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
+	orders_received = []
+	orders_to_schedule = []
+	orders_wait_stock = []
+	orders_scheduled = []
+
+	for idx, order in enumerate(pending_orders):
+		orders_received.append(order)
+		pending_orders.pop(idx)
+
+	while True:
+		# Orders received from UDP
+		while not q_udp_in.empty():
+			order = q_udp_in.get()
+			for o in order:
+				print('boop')
+				orders_received.append(o)
+
+		# Orders waiting for restock
+		if orders_wait_stock:
+			idx2remove = []
+			for idx, order in enumerate(orders_wait_stock):
+				if check_stock:
+					orders_to_schedule.append(order)
+					idx2remove.append(idx)
+				else:
+					continue
+			for idx in idx2remove:
+				orders_wait_stock.pop(idx)
+
+		# Check if warehouse has enough pieces for each order
+		if orders_received:
+			for idx, order in enumerate(orders_received):
+				if check_stock:
+					orders_to_schedule.append(order)
+					#orders_received.pop(idx)
+				else:
+					orders_wait_stock.append()
+					#orders_received.pop(idx)
+			orders_received.clear()
+
+		# Schedule orders that can be complete
+		if orders_to_schedule:
+			for idx, order in enumerate(orders_to_schedule):
+				print(idx)
+				if isinstance(order, TransformOrder):
+					max_delay = order.max_delay
+					#order._db = None
+					sim_order = TransformOrder(order.order_type, order.order_number, order.before_type,
+											   order.after_type, order.quantity, order.max_delay, state = "pending",
+											   processed = order.processed, on_factory = order.on_factory)
+					_, cost = optimizer.simulate(sim_order)
+					cost = 0
+					priority = max_delay - cost
+				else:
+					priority = -9999999
+
+				orders_scheduled.append((priority, order))
+			orders_to_schedule.clear()
+			orders_scheduled.sort(key=lambda order: order[0])
+
+			print('## schedule ##')
+			for priority, order in orders_scheduled:
+				print(f'{order.order_number}: {priority}')
+				q_orders.put(order)
+			print('## end ##')
+
+		for _, order in orders_scheduled:
+			print(f'Optimizing order {order.order_number}')
+			optimizer.order_handler(order)
+			optimizer.optimize_single_order(order)
+			print(f'Optimization complete')
+		orders_scheduled.clear()
+
+
+
 def update_dispatch(optimizer):
 	while True:
 #		print('Update dispatch')
@@ -85,35 +163,49 @@ if __name__ == "__main__":
 	db = DB_handler()
 
 	#fuck persistencia
-	db.delete_all_content(['unload_orders', 'transform_orders'])
+	#db.delete_all_content(['unload_orders', 'transform_orders'])
 
 	optimizer = HorOptimizer()
 	win = GUI_V2(db)
 
 	# Para usar na persistencia, verifica se há ordens na base de dados que faltam processar
 	pending_orders = []
-	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "active", "curr_state" : "pending"}),db))
-	pending_orders.extend(parse_from_db_transformation(db.select("transform_orders", where= { "curr_state" : "active", "curr_state" : "pending"}),db)) #, "curr_state" : "suspended"
+	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "pending", "curr_state" : "active"}),db))
+	pending_orders.extend(parse_from_db_transformation(db.select("transform_orders", where= { "curr_state" : "pending", "curr_state" : "active"}),db)) #, "curr_state" : "suspended"
+
+	print('ordens pendentes:' + str(len(pending_orders)))
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
 	t_order_rec = Thread(target = order_receive, args = (q_udp, db, True))
 	t_order_rec.name = "Thread_client_receive"
 	t_opc_run = Thread(target = run, args = (optimizer, ))
 	t_opc_run.name = "Thread_opc_run"
-	t_compute_orders = Thread(target=compute_orders, args=(optimizer, q_udp, pending_orders))
-	t_compute_orders.name = "Thread_compute_order"
+
+	#t_compute_orders = Thread(target=compute_orders, args=(optimizer, q_udp, pending_orders))
+	#t_compute_orders.name = "Thread_compute_order"
+
+	q_orders = Queue()
+	t_order_scheduling = Thread(target=order_scheduling, args=(optimizer, q_udp, pending_orders, q_orders))
+	t_order_scheduling.name = "Thread_order_scheduling"
+
 	t_update_dispatch = Thread(target=update_dispatch, args=(optimizer,))
 	t_update_dispatch.name = "Thread_update_dispatch"
+
+	#t_optimize = Thread(target=optimize_stuff, args=(optimizer,q_orders))
+	#t_optimize.name = "Thread_optimize"
+
 	t_test = Thread(target=test_thread, args=(optimizer,))
 	t_test.name = "Test"
 
-	threads = [t_order_rec, t_opc_run, t_compute_orders, t_update_dispatch]
+	threads = [t_order_rec, t_opc_run, t_order_scheduling, t_update_dispatch] #, t_optimize]
 
 	t_opc_run.start()
 	t_order_rec.start()
+	#t_optimize.start()
 
-	t_compute_orders.start()
+	#t_compute_orders.start()
 	t_update_dispatch.start()
+	t_order_scheduling.start()
 
 	# threads.append(t_test)
 	# t_test.start()

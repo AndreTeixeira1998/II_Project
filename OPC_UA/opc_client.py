@@ -78,7 +78,7 @@ async def write(var_write, optimizer, cond, block_pieces):
 	while optimizer.dispatch_queue:
 		await cond.wait()
 		piece = optimizer.dispatch_queue.popleft()
-		print("id: ", piece.id, " path: ", piece.path)
+		#print("id: ", piece.id, " path: ", piece.path)
 		# await block_pieces.wait()
 		await sender.send_path(piece, var_write)
 		print(f"Dispatching piece no {piece.id}: ")
