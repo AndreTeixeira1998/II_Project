@@ -63,16 +63,16 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 	orders_wait_stock = []
 	orders_scheduled = []
 
-	for idx, order in enumerate(pending_orders):
-		orders_received.append(order)
-		pending_orders.pop(idx)
+	if pending_orders:
+		for idx, order in enumerate(pending_orders):
+			orders_received.append(order)
+		pending_orders.clear()
 
 	while True:
 		# Orders received from UDP
 		while not q_udp_in.empty():
 			order = q_udp_in.get()
 			for o in order:
-				print('boop')
 				orders_received.append(o)
 
 		# Orders waiting for restock
@@ -101,7 +101,6 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		# Schedule orders that can be complete
 		if orders_to_schedule:
 			for idx, order in enumerate(orders_to_schedule):
-				print(idx)
 				if isinstance(order, TransformOrder):
 					max_delay = order.max_delay
 					#order._db = None
@@ -168,15 +167,17 @@ if __name__ == "__main__":
 	optimizer = HorOptimizer()
 	win = GUI_V2(db)
 
+	Order._db = db
+
 	# Para usar na persistencia, verifica se há ordens na base de dados que faltam processar
 	pending_orders = []
-	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "pending", "curr_state" : "active"}),db))
-	pending_orders.extend(parse_from_db_transformation(db.select("transform_orders", where= { "curr_state" : "pending", "curr_state" : "active"}),db)) #, "curr_state" : "suspended"
-
-	print('ordens pendentes:' + str(len(pending_orders)))
+	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "pending", "curr_state1" : "active"}, operand='OR'),db))
+	print('ordens pendentes unload:' + str(len(pending_orders)))
+	pending_orders.extend(parse_from_db_transformation(db.select("transform_orders", where= { "curr_state" : "pending", "curr_state1" : "active"}, operand='OR'),db)) #, "curr_state" : "suspended"
+	print('ordens pendentes transform + unload:' + str(len(pending_orders)))
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
-	t_order_rec = Thread(target = order_receive, args = (q_udp, db, True))
+	t_order_rec = Thread(target = order_receive, args = (q_udp, True))
 	t_order_rec.name = "Thread_client_receive"
 	t_opc_run = Thread(target = run, args = (optimizer, ))
 	t_opc_run.name = "Thread_opc_run"

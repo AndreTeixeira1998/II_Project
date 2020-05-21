@@ -243,7 +243,7 @@ class Optimizer:
 				print("Wait. That's Illegal")
 				self.block_pieces.clear()
 				return
-			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+			for piece_number in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
 				self.state.num_pieces += 1
@@ -258,7 +258,7 @@ class Optimizer:
 				# print(self.pusher.virginity)
 				
 				'''
-			for piece_number in range(self.state.num_pieces, self.state.num_pieces + order.quantity):
+			for piece_number in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
 						   order=order))
@@ -453,9 +453,10 @@ class HorOptimizer(Optimizer):
 		for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 			if order.order_type == 'Transform':
 				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
+				print([str(trans) for trans in trans_path])
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-				self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
+				self.state.pieces[piece_id].path = self.compute_path(self.path_graph, trans_path)
 			elif order.order_type == 'Unload':
 				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
 				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
@@ -463,7 +464,7 @@ class HorOptimizer(Optimizer):
 			# self.state.pieces_optimized += 1
 			self.state.pieces_optimized += 1
 		#print('Optimized:')
-		#self.print_machine_schedule()
+		self.print_machine_schedule()
 		return self.state
 
 	def optimize_all_pieces(self):
