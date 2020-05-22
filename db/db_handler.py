@@ -294,7 +294,7 @@ if __name__ == "__main__":
 	# db.update("transform_orders", where = {"order_id" : 1}, curr_state = "active" ,batch_size = 8)
 	# dic = {"curr_state" : "active", "curr_state1": "pending"}
 	# data = db.select("transform_orders", where = dic, operand= "OR" ,print_table= True, order_by= "order_id")
-	db.update_stored_pieces(3, 23)
+	# db.update_stored_pieces(3, 23)
 	db.add_stored_pieces(1)
 	db.subtract_stored_pieces(3, 50)
 	data = db.count_pieces()
