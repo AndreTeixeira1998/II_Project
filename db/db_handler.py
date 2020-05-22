@@ -201,7 +201,8 @@ class DB_handler:
 
 
 	def count_pieces(self):
-		"""Retorna o numero de peças no armazem por cada tipo de peças num vetor ordena
+		"""
+		Retorna o numero de peças no armazem por cada tipo de peças num vetor ordenado
 		"""
 		# counted = [0] * 9
 		# for index, _ in enumerate(counted, start = 1):
@@ -221,6 +222,13 @@ class DB_handler:
 
 
 	def add_stored_pieces(self, piece_type, amount = 1):
+		"""
+		Adds one (or more) piece from the db
+			db.add_stored_pieces(1)
+		For cutom amount:
+			db.add_stored_pieces(1, 12)
+		"""
+
 		Query = "UPDATE factory.stored_pieces SET amount = amount + " + str(amount) + " WHERE piece_type = %s"
 		try:
 			self._cursor.execute(Query,tuple(str(piece_type)))
@@ -230,6 +238,13 @@ class DB_handler:
 
 
 	def subtract_stored_pieces(self, piece_type, amount = 1):
+		"""
+		Subtracts one (or more) piece from the db
+			db.subtract_stored_pieces(1)
+		For cutom amount:
+			db.subtract_stored_pieces(1, 12)
+		Note: If the subtraction would make the amount on the db negative, the amount is set to 0
+		"""
 		data = self.select("stored_pieces", content = ["amount"], where = {"piece_type" : piece_type})
 		if (data[0][0] - amount <= 0):
 			print("####### Numero de peças não pode ser negativo (", data[0][0] - amount,") #######")
@@ -247,6 +262,10 @@ class DB_handler:
 
 
 	def update_stored_pieces(self, piece_type, amount):
+		"""
+		Sets piece amount into the db
+			db.update_stored_pieces(1, 12)
+		"""
 		Query = "UPDATE factory.stored_pieces SET amount = %s WHERE piece_type = %s"
 		values_condition = [str(amount), str(piece_type)]
 		try:
