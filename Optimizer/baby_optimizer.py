@@ -72,7 +72,9 @@ class Pusher():
 
 		self.virginity = []  # wut
 
-		self.count = 0
+		self.count_1 = 0
+		self.count_2 = 0
+		self.count_3 = 0
 
 	def push(self, order):
 
@@ -259,27 +261,36 @@ class Optimizer:
 				# print(self.pusher.virginity)
 				
 				'''
-			for piece_number in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
+			for piece_number in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
 						   order=order))
 
-				self.pusher.count += 1
-				if self.pusher.count <= 3:
+				if (order.destination ==1):
+					
+					if self.pusher.count_1 < 3:
+						self.pusher.count_1 += 1
+						self.state.num_pieces += 1
+						self.dispatch_queue.appendleft(self.state.pieces[piece_number])
+						# self.dispatch_queue.append(self.state.pieces[piece_number])
+						order.quantity = order.quantity -1
 
-					self.state.num_pieces += 1
-					self.dispatch_queue.appendleft(self.state.pieces[piece_number])
-				# self.dispatch_queue.append(self.state.pieces[piece_number])
-
-				else:
-
-					print("===>state num:  ", self.state.num_pieces)
-					print("===>state quantity:  ", order.quantity)
-					order.quantity = order.quantity - 3
-					print("===>state restantes:  ", order.quantity)
-					self.pusher.push(order)
-					break
-			print("Pusher count: ", self.pusher.count)
+					else:
+						
+						#order.quantity = order.quantity - temp_c_1
+						
+						self.pusher.push(order)
+						#print("TEMP_PUSH: ", len(self.pusher.dispatch_queue_1))
+						break
+				#print("Pusher count: ", self.pusher.count)
+			
+'''
+print("===>state num:  ", self.state.num_pieces)
+						print("===>state quantity:  ", order.quantity)
+						if(order.quantity > 3):
+							order.quantity = order.quantity - 3
+						print("===>state restantes:  ", order.quantity)
+'''
 
 
 class BabyOptimizer(Optimizer):
@@ -451,19 +462,24 @@ class HorOptimizer(Optimizer):
 		return simulated_state, cost
 
 	def optimize_single_order(self, order: TransformOrder):
-		for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
-			if order.order_type == 'Transform':
+		if order.order_type == 'Transform':   
+			for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
 				print([str(trans) for trans in trans_path])
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
 				self.state.pieces[piece_id].path = self.compute_path(self.path_graph, trans_path)
-			elif order.order_type == 'Unload':
-				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
-				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
-				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
+			
+		#elif order.order_type == 'Unload':	
+		#	for piece_id in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
+		#
+		#	
+		#		# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
+		#		self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
+		#		self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
 			# self.state.pieces_optimized += 1
-			self.state.pieces_optimized += 1
+		  self.state.pieces_optimized += 1
+
 		#print('Optimized:')
 		self.print_machine_schedule()
 		return self.state

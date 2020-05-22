@@ -150,10 +150,12 @@ async def unload(optimizer, cond_pusher_1):
 	# print('#debug UNLOAD')
 	if optimizer.pusher.dispatch_queue_1:
 		await cond_pusher_1.wait()
-		optimizer.pusher.count = 0
-		order_ = optimizer.pusher.dispatch_queue_1.pop()
+
+		optimizer.pusher.count_1=0
+		order_ = optimizer.pusher.dispatch_queue_1.popleft()
+
 		print("quantidade em falta: ", order_.quantity)
-		optimizer.order_handler(order_, continue_unload_command=True)
+		optimizer.order_handler(order_)
 		cond_pusher_1.clear()
 		await asyncio.sleep(1)
 
@@ -232,7 +234,7 @@ async def opc_client_run(optimizer, loop):
 		m_vars.append(vars_P1_charge)
 		m_vars.append(vars_P2_charge)
 
-		pusher1 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.rampa1.Enviar_nova.x")
+		pusher1 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp1")
 		m_vars.append(pusher1)
 
 		warehouse_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id')

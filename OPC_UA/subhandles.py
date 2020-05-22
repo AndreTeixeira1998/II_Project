@@ -79,7 +79,7 @@ class OptimizerSubHandler(SubHandler):
 			self.cond_p2.set()
 
 		elif str(
-				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.rampa1.Enviar_nova.x" and val is True:
+				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp1" and val is True:
 			print('UNLOAD SERVICES')
 
 			self.cond_pusher_1.set()
