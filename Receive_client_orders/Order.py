@@ -103,6 +103,9 @@ class Order:
 
 class TransformOrder(Order):
 	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, state = "pending", processed = 0, on_factory = 0, db = None, already_in_db = False):
+		"""
+		Para sobrepor a base de dados com ordens recebidas com o mesmo id, entrar nesta classe e definir update a True
+		"""
 		super(TransformOrder, self).__init__(order_number, order_type)
 		self.before_type = before_type
 		self.after_type = after_type
@@ -113,10 +116,20 @@ class TransformOrder(Order):
 		self.on_factory = on_factory
 
 
+		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior
+		update = True
+
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
+		#	Primeiro, verifica se há repetição de dados
 		if Order._db != None and not already_in_db:
-			Order._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
-												   before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity)
+			data = Order._db.select("transform_orders", where = {"order_id" : order_number})
+			if not data: 
+				Order._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
+								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity)
+			elif update == True:
+				Order._db.update(table = "transform_orders", where = {"order_id" : order_number}, maxdelay = self.max_delay,
+								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity,
+								produced = processed, on_factory = on_factory, state = state)
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
@@ -174,6 +187,9 @@ class TransformOrder(Order):
 		
 class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0, db = None, already_in_db = False):
+		"""
+		Para sobrepor a base de dados com ordens recebidas com o mesmo id, entrar nesta classe e definir update a True
+		"""
 		super(UnloadOrder, self).__init__(order_number, order_type)
 		self.piece_type = piece_type
 		self.destination = destination
@@ -181,10 +197,22 @@ class UnloadOrder(Order):
 		self.state = state
 		self.unloaded = unloaded
 
-		#Atualiza a base de dados com novas ordens, caso haja uma base de dados
+
+		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior
+		update = False
+
+		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
+		#	Primeiro, verifica se há repetição de dados
 		if Order._db != None and not already_in_db:
-			Order._db.insert(table = "unload_orders", order_id = self.order_number,
-												   destination = self.destination, curr_type = self.piece_type, batch_size = self.quantity)
+			data = Order._db.select("unload_orders", where = {"order_id" : order_number})
+			if not data: 
+				Order._db.insert(table = "unload_orders", order_id = self.order_number, destination = destination,
+								curr_type = piece_type, batch_size = quantity)
+			elif update == True:
+				Order._db.update(table = "unload_orders", where = {"order_id" : order_number},destination = destination,
+								curr_type = piece_type, batch_size = quantity,
+								state = state, unloaded = unloaded)
+
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
@@ -313,10 +341,11 @@ def parse(file_string, address, port):
 if __name__ == "__main__":
 	import time
 	_db = DB_handler()
-	Order._db = _db
-	ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
+	Order.give_db(_db)
+	# ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
 	ex_oee = UnloadOrder(order_type="Unload", order_number= 12, piece_type = 1, destination = 3, quantity= 10)
 
+	ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 500, before_type=3, after_type = 6, quantity= 10)
 	time.sleep(5)
 
 	print("Update processed")

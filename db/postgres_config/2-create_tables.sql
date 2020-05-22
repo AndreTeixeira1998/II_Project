@@ -40,6 +40,11 @@ CREATE TABLE pieces (
 	associated_order INTEGER REFERENCES orders(order_id)
 );
 
+CREATE TABLE stored_pieces (
+	piece_type INTEGER NOT NULL,
+	amount INTEGER DEFAULT(54) CHECK (amount >= 0)
+);
+
 CREATE TABLE machines(
 	machine_id  SERIAL PRIMARY KEY,
 	machine_type CHAR(1),
