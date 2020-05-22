@@ -212,8 +212,17 @@ class DB_handler:
 if __name__ == "__main__":
 	db = DB_handler()
 
+	import sys
+	sys.path.insert(0, "..")
+	sys.path.insert(0, "Receive_client_orders")
+	from Order import Order,TransformOrder, UnloadOrder
 	# db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
 	# db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
+
+	Order.give_db(db)
+
+	ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
+	ex_oee = UnloadOrder(order_type="Unload", order_number= 12, piece_type = 1, destination = 3, quantity= 10)
 
 	db.update("transform_orders", where = {"order_id" : 1}, curr_state = "active" ,batch_size = 8)
 	dic = {"curr_state" : "active", "curr_state1": "pending"}
