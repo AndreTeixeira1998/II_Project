@@ -29,6 +29,14 @@ do $$ --Insere as peças inicias do armazem
 	end;
 $$;
 
+do $$ --Insere as peças inicias do armazem
+	begin
+		for ptype in 1..9 loop
+			INSERT INTO stored_pieces (piece_type) VALUES (ptype);
+		end loop;
+	end;
+$$;
+
 do $$ --Insere as zonas de descarga com default de descarga por peça 0
 	begin
 		for i in 1..3 loop

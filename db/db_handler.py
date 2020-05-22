@@ -146,7 +146,7 @@ class DB_handler:
 		if print_table ==True: first_line = ""
 		# Ver tipo de conteudo desejado
 		if content == "*":
-			Query += "*"
+			Query += content
 			Query += " FROM factory." + table
 			if print_table ==True:
 				for col in colnames:
@@ -171,7 +171,7 @@ class DB_handler:
 			Query += " WHERE "
 			for key,value in where.items():
 				if key[-1].isdigit():
-					key = key[:-1]
+					key = key[:-1] 
 				Query += key + "=%s " + operand + " "
 				condition.append(str(value))
 			if operand !="OR":
@@ -197,26 +197,86 @@ class DB_handler:
 				print(line)
 		return data
 
+
+
+
 	def count_pieces(self):
 		"""Retorna o numero de peças no armazem por cada tipo de peças num vetor ordena
 		"""
-		counted = [0] * 9
-		for index, _ in enumerate(counted, start = 1):
-			Query = "SELECT COUNT(piece_type) FROM factory.pieces WHERE piece_type = %s AND piece_state = %s"
-			self._cursor.execute(Query, (index,"stored",))
-			data = self._cursor.fetchall()
-			counted[index - 1] = data[0][0]
+		# counted = [0] * 9
+		# for index, _ in enumerate(counted, start = 1):
+		# 	Query = "SELECT COUNT(piece_type) FROM factory.pieces WHERE piece_type = %s AND piece_state = %s"
+		# 	self._cursor.execute(Query, (index,"stored",))
+		# 	data = self._cursor.fetchall()
+		# 	counted[index - 1] = data[0][0]
 
+
+		Query = "SELECT (amount) FROM factory.stored_pieces ORDER BY piece_type"
+		self._cursor.execute(Query)
+		counted = self._cursor.fetchall()
+		counted = [i[0] for i in counted]
 		return counted
+
+
+
+
+	def add_stored_pieces(self, piece_type, amount = 1):
+		Query = "UPDATE factory.stored_pieces SET amount = amount + " + str(amount) + " WHERE piece_type = %s"
+		try:
+			self._cursor.execute(Query,tuple(str(piece_type)))
+			self._connection.commit()
+		except(Exception, psycopg2.Error) as error:
+			print("Error while connecting to PostgreSQL", error)
+
+
+	def subtract_stored_pieces(self, piece_type, amount = 1):
+		data = self.select("stored_pieces", content = ["amount"], where = {"piece_type" : piece_type})
+		if (data[0][0] - amount <= 0):
+			print("####### Numero de peças não pode ser negativo (", data[0][0] - amount,") #######")
+			if (data[0][0] != 0):
+				print("#######       Numero de peças na DB colocado a 0      #######")
+				self.update_stored_pieces(piece_type, 0)
+			return
+		Query = "UPDATE factory.stored_pieces SET amount = amount - "+ str(amount) + " WHERE piece_type = %s"
+		
+		try:
+			self._cursor.execute(Query,tuple(str(piece_type)))
+			self._connection.commit()
+		except(Exception, psycopg2.Error) as error:
+			print("Error while connecting to PostgreSQL", error)
+
+
+	def update_stored_pieces(self, piece_type, amount):
+		Query = "UPDATE factory.stored_pieces SET amount = %s WHERE piece_type = %s"
+		values_condition = [str(amount), str(piece_type)]
+		try:
+			self._cursor.execute(Query,tuple(values_condition))
+			self._connection.commit()
+		except(Exception, psycopg2.Error) as error:
+			print("Error while connecting to PostgreSQL", error)
+
+
 
 if __name__ == "__main__":
 	db = DB_handler()
 
+	# import sys
+	# sys.path.insert(0, "..")
+	# sys.path.insert(0, "Receive_client_orders")
+	# from Order import Order,TransformOrder, UnloadOrder
 	# db.insert("transform_orders", order_id = 1, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 20)
 	# db.insert("transform_orders", order_id = 2, maxdelay = 300, before_type = 1, after_type = 2, batch_size = 10)
 
-	db.update("transform_orders", where = {"order_id" : 1}, curr_state = "active" ,batch_size = 8)
-	dic = {"curr_state" : "active", "curr_state1": "pending"}
-	data = db.select("transform_orders", where = dic, operand= "OR" ,print_table= True, order_by= "order_id")
-	
+	# Order.give_db(db)
+
+	# ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
+	# ex_oee = UnloadOrder(order_type="Unload", order_number= 12, piece_type = 1, destination = 3, quantity= 10)
+
+	# db.update("transform_orders", where = {"order_id" : 1}, curr_state = "active" ,batch_size = 8)
+	# dic = {"curr_state" : "active", "curr_state1": "pending"}
+	# data = db.select("transform_orders", where = dic, operand= "OR" ,print_table= True, order_by= "order_id")
+	db.update_stored_pieces(3, 23)
+	db.add_stored_pieces(1)
+	db.subtract_stored_pieces(3, 50)
+	data = db.count_pieces()
 	print(data)
