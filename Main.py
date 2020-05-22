@@ -167,7 +167,7 @@ if __name__ == "__main__":
 	optimizer = HorOptimizer()
 	win = GUI_V2(db)
 
-	Order._db = db
+	Order.give_db(db)
 
 	# Para usar na persistencia, verifica se há ordens na base de dados que faltam processar
 	pending_orders = []
