@@ -22,6 +22,10 @@ def optimizer_init(optimizer):
 
 	optimizer.block_pieces.set()
 
+	for ptype in range(1, 10):
+		optimizer.stock[ptype] = 0
+
+
 	for cell in range(1, NUMBER_OF_CELLS + 1):
 		optimizer.add_transform_cell(cell)
 

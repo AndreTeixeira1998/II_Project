@@ -157,6 +157,11 @@ async def unload(optimizer, cond_pusher_1):
 		cond_pusher_1.clear()
 		await asyncio.sleep(1)
 
+async def get_stocks(optimizer, stock_nodes):
+	for type in range(1,10):
+		optimizer.stock[type] = await stock_nodes[type].get_value()
+	#print(optimizer.stock)
+	return optimizer.stock
 
 async def opc_client_run(optimizer, loop):
 	url = 'opc.tcp://localhost:4840/'
@@ -214,10 +219,15 @@ async def opc_client_run(optimizer, loop):
 			'Mc_3': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c5t5")
 		}
 
+		stock_nodes = {}
+		for ptype in range(1, 10):
+			print(str(ptype))
+			stock_nodes[ptype] = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.p" + str(ptype))
+
 		var_despacha_1_para_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x")
 		m_vars.append(var_despacha_1_para_3)
 
-		vars_P1_charge = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor")
+		vars_P1_charge = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.c7t7a_i.sensor")
 		vars_P2_charge = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor")
 		m_vars.append(vars_P1_charge)
 		m_vars.append(vars_P2_charge)
@@ -248,7 +258,8 @@ async def opc_client_run(optimizer, loop):
 				charge_P1(client, cond_p1, vars_P1_charge),
 				charge_P2(client, cond_p2, vars_P2_charge),
 				swap_tools(tool_nodes, optimizer),
-				unload(optimizer, cond_pusher_1)
+				unload(optimizer, cond_pusher_1),
+				get_stocks(optimizer, stock_nodes)
 			)
 
 

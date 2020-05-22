@@ -1,0 +1,4 @@
+DEBUG:asyncio:Using proactor: IocpProactor
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:asyncua.client.client:connect
+INFO:asyncua.client.ua_client.UaClient:opening connection

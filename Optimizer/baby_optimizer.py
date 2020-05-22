@@ -147,6 +147,7 @@ class Optimizer:
 		self.path_graph = PathGraph()
 		self.reverse_graph = PathGraph()
 		self.recipes = {}
+		self.stock = {}
 		self.state = State()
 		self.block_pieces = asyncio.Event()
 		self.tracker = Tracker(self.state)

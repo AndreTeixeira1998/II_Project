@@ -29,6 +29,10 @@ def parse_from_db_transformation(data, db):
 											state = order[5], db = db, already_in_db= True))
 	return parsed_order
 
+def check_stock(optimizer, order):
+	return optimizer.stock[order.before_type] > order.quantity
+
+
 def test_thread(optimizer):
 	while True:
 		#print(f'{optimizer.state.num_pieces} {optimizer.dispatch_queue}')
@@ -56,7 +60,6 @@ def compute_orders(optimizer, q_udp_in, pending_orders):
 			#optimizer.print_machine_schedule()
 
 
-check_stock = True
 def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 	orders_received = []
 	orders_to_schedule = []
@@ -79,7 +82,7 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		if orders_wait_stock:
 			idx2remove = []
 			for idx, order in enumerate(orders_wait_stock):
-				if check_stock:
+				if check_stock(optimizer, order):
 					orders_to_schedule.append(order)
 					idx2remove.append(idx)
 				else:
@@ -90,11 +93,12 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		# Check if warehouse has enough pieces for each order
 		if orders_received:
 			for idx, order in enumerate(orders_received):
-				if check_stock:
+				if check_stock(optimizer, order):
 					orders_to_schedule.append(order)
 					#orders_received.pop(idx)
 				else:
-					orders_wait_stock.append()
+					print('Nao tenho stock para essa porra')
+					orders_wait_stock.append(order)
 					#orders_received.pop(idx)
 			orders_received.clear()
 
@@ -106,7 +110,7 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 					#order._db = None
 					sim_order = TransformOrder(order.order_type, order.order_number, order.before_type,
 											   order.after_type, order.quantity, order.max_delay, state = "pending",
-											   processed = order.processed, on_factory = order.on_factory)
+											   processed = order.processed, on_factory = order.on_factory, already_in_db=True)
 					_, cost = optimizer.simulate(sim_order)
 					cost = 0
 					priority = max_delay - cost
@@ -162,7 +166,7 @@ if __name__ == "__main__":
 	db = DB_handler()
 
 	#fuck persistencia
-	#db.delete_all_content(['unload_orders', 'transform_orders'])
+	db.delete_all_content(['unload_orders', 'transform_orders'])
 
 	optimizer = HorOptimizer()
 	win = GUI_V2(db)
