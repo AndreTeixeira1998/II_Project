@@ -30,7 +30,13 @@ def parse_from_db_transformation(data, db):
 	return parsed_order
 
 def check_stock(optimizer, order):
-	return optimizer.stock[order.before_type] > order.quantity
+	if order.order_type == 'Transform':
+		return optimizer.stock[order.before_type] >= order.quantity
+	elif order.order_type == 'Unload':
+		return optimizer.stock[order.piece_type] >= order.quantity
+	else:
+		print(f'FATAL: Invalid order in check_stock()')
+		exit()
 
 
 def test_thread(optimizer):

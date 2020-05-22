@@ -45,13 +45,13 @@ class Tracker:
 
 	def print_tracking_info(self):
 		pass
-		#print(f'Pieces on transit: {[pieceid for pieceid in self.pieces_on_transit.keys()]}')
-		#print(f'Pieces complete: {[pieceid for pieceid in self.pieces_complete.keys()]}')
+		print(f'Pieces on transit: {[pieceid for pieceid in self.pieces_on_transit.keys()]}')
+		print(f'Pieces complete: {[pieceid for pieceid in self.pieces_complete.keys()]}')
 
 	def print_order_status(self):
 		for order in self.order_tracking.keys():
 			pass
-			#print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
+			print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
 
 
 class Recipe:
@@ -465,7 +465,6 @@ class HorOptimizer(Optimizer):
 		if order.order_type == 'Transform':   
 			for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
-				print([str(trans) for trans in trans_path])
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
 				self.state.pieces[piece_id].path = self.compute_path(self.path_graph, trans_path)
@@ -478,10 +477,10 @@ class HorOptimizer(Optimizer):
 		#		self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
 		#		self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
 			# self.state.pieces_optimized += 1
-		  self.state.pieces_optimized += 1
+				self.state.pieces_optimized += 1
 
 		#print('Optimized:')
-		self.print_machine_schedule()
+		#self.print_machine_schedule()
 		return self.state
 
 	def optimize_all_pieces(self):
@@ -501,7 +500,7 @@ class HorOptimizer(Optimizer):
 			# self.state.pieces_optimized += 1
 			self.state.pieces_optimized += 1
 		print('Optimized:')
-		self.print_machine_schedule()
+		#self.print_machine_schedule()
 		return self.state
 
 
