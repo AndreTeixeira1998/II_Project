@@ -17,14 +17,16 @@ CREATE TABLE transform_orders(
 	after_type INTEGER NOT NULL,
 	batch_size INTEGER DEFAULT (1),
 	produced INTEGER DEFAULT (0) CHECK (produced <= batch_size),
-	on_factory INTEGER DEFAULT (0) CHECK (produced <= batch_size)
+	on_factory INTEGER DEFAULT (0) CHECK (produced <= batch_size),
+	PRIMARY KEY (order_id)
 )INHERITS (orders);
 
 CREATE TABLE unload_orders(
 	curr_type INTEGER NOT NULL,
 	destination INTEGER NOT NULL, -- DUNNO q tipo por.. fica integer por agr
 	batch_size INTEGER DEFAULT (1),
-	unloaded INTEGER DEFAULT (0) CHECK (unloaded <= batch_size)
+	unloaded INTEGER DEFAULT (0) CHECK (unloaded <= batch_size),
+	PRIMARY KEY (order_id)
 )INHERITS (orders);
 
 CREATE TABLE stock_orders(
@@ -36,6 +38,11 @@ CREATE TABLE pieces (
 	piece_type INTEGER NOT NULL,
 	piece_state PIECE_STATE DEFAULT 'pending',
 	associated_order INTEGER REFERENCES orders(order_id)
+);
+
+CREATE TABLE stored_pieces (
+	piece_type INTEGER NOT NULL,
+	amount INTEGER DEFAULT(54) CHECK (amount >= 0)
 );
 
 CREATE TABLE machines(

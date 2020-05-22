@@ -149,6 +149,7 @@ class Optimizer:
 		self.path_graph = PathGraph()
 		self.reverse_graph = PathGraph()
 		self.recipes = {}
+		self.stock = {}
 		self.state = State()
 		self.block_pieces = asyncio.Event()
 		self.tracker = Tracker(self.state)
@@ -290,6 +291,7 @@ print("===>state num:  ", self.state.num_pieces)
 							order.quantity = order.quantity - 3
 						print("===>state restantes:  ", order.quantity)
 '''
+
 
 class BabyOptimizer(Optimizer):
 	'''
@@ -462,7 +464,6 @@ class HorOptimizer(Optimizer):
 	def optimize_single_order(self, order: TransformOrder):
 		if order.order_type == 'Transform':   
 			for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
-			
 				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
 				print([str(trans) for trans in trans_path])
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
@@ -477,7 +478,8 @@ class HorOptimizer(Optimizer):
 		#		self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
 		#		self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
 			# self.state.pieces_optimized += 1
-		self.state.pieces_optimized += 1
+		  self.state.pieces_optimized += 1
+
 		#print('Optimized:')
 		self.print_machine_schedule()
 		return self.state

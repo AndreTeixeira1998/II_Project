@@ -74,11 +74,22 @@ def strip_tags(html):
 
 
 class Order:
-	def __init__(self, order_number, order_type, db: DB_handler = None):
+	
+	_db = None # Comum a todas as instancias
+
+	def __init__(self, order_number, order_type):
 		self.order_number = order_number
-		self._db = db
 		self.order_type = order_type
 		# self.time = datetime.now()
+
+
+	@staticmethod
+	def give_db(db = None):
+		"""
+		Gives the db to the class of orders.
+			Called -> Order.give_db(database)
+		"""
+		Order._db = db
 
 
 	@staticmethod
@@ -88,9 +99,14 @@ class Order:
 		print(data[2000:len(data)-348])
 		return data[2000:len(data)-348]
 
+
+
 class TransformOrder(Order):
-	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, state = "pending", processed = 0, on_factory = 0, db : DB_handler= None, already_in_db = False):
-		super(TransformOrder, self).__init__(order_number, order_type, db)
+	def __init__(self, order_type, order_number, before_type, after_type, quantity, max_delay, state = "pending", processed = 0, on_factory = 0, db = None, already_in_db = False):
+		"""
+		Para sobrepor a base de dados com ordens recebidas com o mesmo id, entrar nesta classe e definir update a True
+		"""
+		super(TransformOrder, self).__init__(order_number, order_type)
 		self.before_type = before_type
 		self.after_type = after_type
 		self.quantity = quantity
@@ -100,18 +116,28 @@ class TransformOrder(Order):
 		self.on_factory = on_factory
 
 
+		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior
+		update = True
+
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
-		if self._db != None and not already_in_db:
-			self._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
-												   before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity)
+		#	Primeiro, verifica se há repetição de dados
+		if Order._db != None and not already_in_db:
+			data = Order._db.select("transform_orders", where = {"order_id" : order_number})
+			if not data: 
+				Order._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
+								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity)
+			elif update == True:
+				Order._db.update(table = "transform_orders", where = {"order_id" : order_number}, maxdelay = self.max_delay,
+								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity,
+								produced = processed, on_factory = on_factory, state = state)
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
 		pass
 		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
 		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
-		if self._db != None:
-			self._db.update(table = "transform_orders", where = "order_id", condition = self.order_number, curr_state = "processed")
+		if Order._db != None:
+			Order._db.update(table = "transform_orders", where = {"order_id": self.order_number}, curr_state = "processed")
 
 
 	def get(self, attribute):
@@ -140,46 +166,62 @@ class TransformOrder(Order):
 		"""
 		Updates the state of the order to active in the DB
 		"""
-		if self._db != None:
-			self._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "active")
+		if Order._db != None:
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "active")
 	
 	def order_complete(self):
 		"""
 		Updates the state of the order to processed in the DB
 		"""
-		if self._db != None:
-			self._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity)
+		if Order._db != None:
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity)
 	
 	def update_processed(self, quant):
 		"""
 		Updates the number of pieces processed in the DB
 		"""
-		if self._db != None:
-			self._db.update("transform_orders", where = {"order_id" : self.order_number}, produced = quant)
+		if Order._db != None:
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, produced = quant)
 
 
 		
 class UnloadOrder(Order):
-	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0,db : DB_handler = None, already_in_db = False):
-		super(UnloadOrder, self).__init__(order_number, order_type, db)
+	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0, db = None, already_in_db = False):
+		"""
+		Para sobrepor a base de dados com ordens recebidas com o mesmo id, entrar nesta classe e definir update a True
+		"""
+		super(UnloadOrder, self).__init__(order_number, order_type)
 		self.piece_type = piece_type
 		self.destination = destination
 		self.quantity = quantity
 		self.state = state
 		self.unloaded = unloaded
 
-		#Atualiza a base de dados com novas ordens, caso haja uma base de dados
-		if self._db != None and not already_in_db:
-			self._db.insert(table = "unload_orders", order_id = self.order_number,
-												   destination = self.destination, curr_type = self.piece_type, batch_size = self.quantity)
+
+		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior
+		update = False
+
+		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
+		#	Primeiro, verifica se há repetição de dados
+		if Order._db != None and not already_in_db:
+			data = Order._db.select("unload_orders", where = {"order_id" : order_number})
+			if not data: 
+				Order._db.insert(table = "unload_orders", order_id = self.order_number, destination = destination,
+								curr_type = piece_type, batch_size = quantity)
+			elif update == True:
+				Order._db.update(table = "unload_orders", where = {"order_id" : order_number},destination = destination,
+								curr_type = piece_type, batch_size = quantity,
+								state = state, unloaded = unloaded)
+
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	def __del__(self):
+		# Não retirar o pass
 		pass
 		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
 		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
-		if self._db != None:
-			self._db.update(table = "unload_orders", where = "order_id", condition = self.order_number, curr_state = "processed")
+		if Order._db != None:
+			self.order_complete()
 
 	def get(self, attribute):
 		if attribute == "order_type":
@@ -203,42 +245,42 @@ class UnloadOrder(Order):
 		"""
 		Updates the state of the order to active in the DB
 		"""
-		if self._db != None:
-			self._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "active")
+		if Order._db != None:
+			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "active")
 	
 	def order_complete(self):
 		"""
 		Updates the state of the order to processed in the DB
 		"""
-		if self._db != None:
-			self._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", unloaded = self.quantity)
+		if Order._db != None:
+			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", unloaded = self.quantity)
 	
 	def update_processed(self, quant):
 		"""
 		Updates the number of pieces processed in the DB
 		"""
-		if self._db != None:
-			self._db.update("unload_orders", where = {"order_id" : self.order_number}, unloaded = quant)
+		if Order._db != None:
+			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, unloaded = quant)
 
 
 
 
 
 class Request_StoresOrder(Order):
-	def __init__(self, order_type, address, port, db : DB_handler = None):
+	def __init__(self, order_type, address, port, db = None):
 		order_number = 100
-		super(Request_StoresOrder, self).__init__(order_number, order_type, db)
+		super(Request_StoresOrder, self).__init__(order_number, order_type)
 		self.address = address
 		self.port = port
 
 		# Untested
-		if self._db != None:
-			self._db.insert("stock_orders", order_id = self.order_number, start_time = "NOW()")
+		if Order._db != None:
+			Order._db.insert("stock_orders", order_id = self.order_number, start_time = "NOW()")
 
 	# Untested
 	def __del__(self):
-		if self._db != None:
-			self._db.update("stock_orders", where = {"order_id" : self.order_number}, end_time = "NOW()")
+		if Order._db != None:
+			Order._db.update("stock_orders", where = {"order_id" : self.order_number}, end_time = "NOW()")
 
 	def get(self, attribute):
 		if attribute == "order_type":
@@ -255,14 +297,15 @@ class Request_StoresOrder(Order):
 		"""Generates a xml binary string (ready to be sent to udp) using the information available in the database
 		"""
 		Current_Stores = ET.Element("Current_Stores")
-		stored_pieces = self._db.count_pieces()
+		stored_pieces = Order._db.count_pieces()
 		for index, value in enumerate(stored_pieces, start= 1):
 			ET.SubElement(Current_Stores, "WorkPiece" , {"type": "P" + str(index), "quantity": str(value)})
 		xml_message = ET.tostring(Current_Stores)
 		return xml_message 
 
 
-def parse(file_string, address, port, db : DB_handler = None):
+
+def parse(file_string, address, port):
 	# Parses the uml into a structure
 	root = ET.fromstring(file_string)
 	# May receive several orders in the same file
@@ -278,18 +321,39 @@ def parse(file_string, address, port, db : DB_handler = None):
 					before_type = int(child.get("From")[1])
 					after_type = int(child.get("To")[1])
 					quantity = int(child.get("Quantity"))
-					orders.append(TransformOrder(order_type = order_type, order_number = order_number, db = db,
+					orders.append(TransformOrder(order_type = order_type, order_number = order_number,
 									max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity))
 				elif order_type == "Unload":
 					order_number = int(ord.attrib["Number"])
 					piece_type = int(child.get("Type")[1])
 					destination = int(child.get("Destination")[1])
 					quantity = int(child.get("Quantity"))
-					orders.append(UnloadOrder(order_number = order_number, order_type = order_type, db = db,
+					orders.append(UnloadOrder(order_number = order_number, order_type = order_type,
 									quantity = quantity, piece_type = piece_type, destination = destination))
 				else:
 					print("Error creating order (No such order type as %s)" % order_type)
 		elif ord.tag == "Request_Stores":
 			order_type = ord.tag
-			orders.append(Request_StoresOrder(order_type = order_type, db = db, address = address, port = port))
+			orders.append(Request_StoresOrder(order_type = order_type, address = address, port = port))
 	return orders
+
+
+if __name__ == "__main__":
+	import time
+	_db = DB_handler()
+	Order.give_db(_db)
+	# ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
+	ex_oee = UnloadOrder(order_type="Unload", order_number= 12, piece_type = 1, destination = 3, quantity= 10)
+
+	ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 500, before_type=3, after_type = 6, quantity= 10)
+	time.sleep(5)
+
+	print("Update processed")
+	ex_order.update_processed(3)
+	ex_oee.update_processed(2)
+
+	time.sleep(5)
+
+	print("Complete order")
+	ex_order.order_complete()
+	ex_oee.order_complete()
