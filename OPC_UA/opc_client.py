@@ -71,20 +71,47 @@ class OnePiece():
 		return
 
 
-async def write(var_write, optimizer, cond, block_pieces):
+async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pusher3):
 	# print("######################debug: write() started")
 	sender = OnePiece()
+	PIECES_TO_SEND = 3
 
-	while optimizer.dispatch_queue:
-		await cond.wait()
-		piece = optimizer.dispatch_queue.popleft()
-		#print("id: ", piece.id, " path: ", piece.path)
-		# await block_pieces.wait()
-		await sender.send_path(piece, var_write)
-		print(f"Dispatching piece no {piece.id}: ")
-		optimizer.tracker.mark_dispatched(piece.id)
-		cond.clear()
-		await asyncio.sleep(0.5)
+	if optimizer.pusher.dispatch_queue_1 and cond_pusher1.is_set():
+		for p in range(PIECES_TO_SEND):
+			if optimizer.pusher.dispatch_queue_1 and optimizer.pusher.count_1 < 3:
+				optimizer.pusher.count_1 += 1
+				piece = optimizer.pusher.dispatch_queue_1.popleft()
+				optimizer.dispatch_queue.appendleft(piece)
+		if optimizer.pusher.count_1 >= 3:
+			cond_pusher1.clear()
+
+	elif optimizer.pusher.dispatch_queue_2 and cond_pusher2.is_set():
+		for p in range(PIECES_TO_SEND):
+			if optimizer.pusher.dispatch_queue_2 and optimizer.pusher.count_2 < 3:
+				optimizer.pusher.count_2 += 1
+				piece = optimizer.pusher.dispatch_queue_2.popleft()
+				optimizer.dispatch_queue.appendleft(piece)
+		if optimizer.pusher.count_2 >= 3:
+			cond_pusher2.clear()
+
+	elif optimizer.pusher.dispatch_queue_3 and cond_pusher3.is_set():
+		for p in range(PIECES_TO_SEND):
+			if optimizer.pusher.dispatch_queue_3 and optimizer.pusher.count_3 < 3:
+				optimizer.pusher.count_3 += 1
+				piece = optimizer.pusher.dispatch_queue_3.popleft()
+				optimizer.dispatch_queue.appendleft(piece)
+		if optimizer.pusher.count_3 >= 3:
+			cond_pusher3.clear()
+
+	elif optimizer.dispatch_queue:
+		if cond.is_set():
+			piece = optimizer.dispatch_queue.popleft()
+			#print("id: ", piece.id, " path: ", piece.path)
+			# await block_pieces.wait()
+			await sender.send_path(piece, var_write)
+			print(f"Dispatching piece no {piece.id}: ")
+			optimizer.tracker.mark_dispatched(piece.id)
+			cond.clear()
 
 
 async def swap_tools(tool_nodes, optimizer):
@@ -148,15 +175,16 @@ async def charge_P2(client, cond_p2, charge_var):
 
 async def unload(optimizer, cond_pusher_1):
 	# print('#debug UNLOAD')
-	if optimizer.pusher.dispatch_queue_1:
-		await cond_pusher_1.wait()
+	while True:
+		if optimizer.pusher.dispatch_queue_1:
+			await cond_pusher_1.wait()
 
-		optimizer.pusher.count_1=0
-		order_ = optimizer.pusher.dispatch_queue_1.popleft()
+			optimizer.pusher.count_1=0
+			order_ = optimizer.pusher.dispatch_queue_1.popleft()
 
-		print("quantidade em falta: ", order_.quantity)
-		optimizer.order_handler(order_)
-		cond_pusher_1.clear()
+			print("quantidade em falta: ", order_.quantity)
+			optimizer.order_handler(order_)
+			cond_pusher_1.clear()
 		await asyncio.sleep(1)
 
 async def get_stocks(optimizer, stock_nodes):
@@ -236,6 +264,10 @@ async def opc_client_run(optimizer, loop):
 
 		pusher1 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp1")
 		m_vars.append(pusher1)
+		pusher2 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp2")
+		m_vars.append(pusher2)
+		pusher3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp3")
+		m_vars.append(pusher3)
 
 		warehouse_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id')
 		m_vars.append(warehouse_in)
@@ -245,8 +277,13 @@ async def opc_client_run(optimizer, loop):
 		cond_p2 = asyncio.Event()
 
 		cond_pusher_1 = asyncio.Event()
+		cond_pusher_2 = asyncio.Event()
+		cond_pusher_3 = asyncio.Event()
+		cond_pusher_1.set()
+		cond_pusher_2.set()
+		cond_pusher_3.set()
 
-		handler = OptimizerSubHandler(optimizer, cond, cond_p1, cond_p2, cond_pusher_1, _logger)
+		handler = OptimizerSubHandler(optimizer, cond, cond_p1, cond_p2, cond_pusher_1, cond_pusher_2, cond_pusher_3, _logger)
 
 		print("MES-PLC OpcUA Connection established")
 
@@ -256,11 +293,11 @@ async def opc_client_run(optimizer, loop):
 
 		while True:
 			await asyncio.gather(
-				write(var_write, optimizer, cond, optimizer.block_pieces),
+				write(var_write, optimizer, cond, cond_pusher_1, cond_pusher_2, cond_pusher_3),
 				charge_P1(client, cond_p1, vars_P1_charge),
 				charge_P2(client, cond_p2, vars_P2_charge),
 				swap_tools(tool_nodes, optimizer),
-				unload(optimizer, cond_pusher_1),
+				#unload(optimizer, cond_pusher_1),
 				get_stocks(optimizer, stock_nodes)
 			)
 

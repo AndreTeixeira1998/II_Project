@@ -36,7 +36,7 @@ class OptimizerSubHandler(SubHandler):
 	sensor and actuator updates.
 	"""
 
-	def __init__(self, optimizer, cond, cond_p1, cond_p2, cond_pusher_1, logger=logging.getLogger(__name__)):
+	def __init__(self, optimizer, cond, cond_p1, cond_p2, cond_pusher_1, cond_pusher_2, cond_pusher_3, logger=logging.getLogger(__name__)):
 		SubHandler.__init__(self, logger)
 		self.optimizer = optimizer
 		self.encoding = {"c1t3": "Ma_1", "c1t4": "Mb_1", "c1t5": "Mc_1",
@@ -46,6 +46,8 @@ class OptimizerSubHandler(SubHandler):
 		self.cond_p1 = cond_p1
 		self.cond_p2 = cond_p2
 		self.cond_pusher_1 = cond_pusher_1
+		self.cond_pusher_2 = cond_pusher_2
+		self.cond_pusher_3 = cond_pusher_3
 
 	def datachange_notification(self, node, val, data):
 		"""
@@ -80,9 +82,22 @@ class OptimizerSubHandler(SubHandler):
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp1" and val is True:
-			print('UNLOAD SERVICES')
-
+			print('UNLOAD SERVICES 1 !!!!')
+			self.optimizer.pusher.count_1 = 0
 			self.cond_pusher_1.set()
+
+		elif str(
+				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp2" and val is True:
+			print('UNLOAD SERVICES 2 !!!!')
+			self.optimizer.pusher.count_2 = 0
+			self.cond_pusher_2.set()
+
+		elif str(
+				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp3" and val is True:
+			print('UNLOAD SERVICES 3 !!!!')
+			self.optimizer.pusher.count_3 = 0
+			self.cond_pusher_3.set()
+
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id" and val != 0:

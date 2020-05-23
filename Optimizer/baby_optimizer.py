@@ -253,37 +253,17 @@ class Optimizer:
 		elif isinstance(order, UnloadOrder):
 			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
 						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
-
-			'''
-			# verifica se ? a primeira vez da senhora
-			if order.destination not in self.pusher.virginity:
-				self.pusher.virginity.append(order.destination)
-				# print(self.pusher.virginity)
-				
-				'''
 			for piece_number in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
 						   order=order))
 
-				if (order.destination ==1):
-					
-					if self.pusher.count_1 < 3:
-						self.pusher.count_1 += 1
-						self.state.num_pieces += 1
-						self.dispatch_queue.appendleft(self.state.pieces[piece_number])
-						# self.dispatch_queue.append(self.state.pieces[piece_number])
-						order.quantity = order.quantity -1
-
-					else:
-						
-						#order.quantity = order.quantity - temp_c_1
-						
-						self.pusher.push(order)
-						#print("TEMP_PUSH: ", len(self.pusher.dispatch_queue_1))
-						break
-				#print("Pusher count: ", self.pusher.count)
-			
+				if order.destination ==1:
+					self.pusher.dispatch_queue_1.append(self.state.pieces[piece_number])
+				elif order.destination == 2:
+					self.pusher.dispatch_queue_2.append(self.state.pieces[piece_number])
+				elif order.destination == 3:
+					self.pusher.dispatch_queue_3.append(self.state.pieces[piece_number])
 '''
 print("===>state num:  ", self.state.num_pieces)
 						print("===>state quantity:  ", order.quantity)
@@ -468,15 +448,10 @@ class HorOptimizer(Optimizer):
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
 				self.state.pieces[piece_id].path = self.compute_path(self.path_graph, trans_path)
-			
-		#elif order.order_type == 'Unload':	
-		#	for piece_id in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
-		#
-		#	
-		#		# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
-		#		self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
-		#		self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
-			# self.state.pieces_optimized += 1
+				self.state.pieces_optimized += 1
+
+		elif order.order_type == 'Unload':
+			for piece_id in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces_optimized += 1
 
 		#print('Optimized:')
