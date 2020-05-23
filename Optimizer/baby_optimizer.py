@@ -185,6 +185,11 @@ class Optimizer:
 		for machine in self.state.machines.values():
 			print(f"{machine.id}: {[str(op) for op in machine.op_list]}")
 
+	def print_pusher_queues(self):
+		print(f'P1: {[piece.id for piece in self.pusher.dispatch_queue_1]}')
+		print(f'P2: {[piece.id for piece in self.pusher.dispatch_queue_2]}')
+		print(f'P3: {[piece.id for piece in self.pusher.dispatch_queue_3]}')
+
 	def add_conveyor(self, graph, id_):
 		return graph.add_vertex(id_)
 
@@ -455,7 +460,8 @@ class HorOptimizer(Optimizer):
 				self.state.pieces_optimized += 1
 
 		#print('Optimized:')
-		#self.print_machine_schedule()
+		self.print_machine_schedule()
+		self.print_pusher_queues()
 		return self.state
 
 	def optimize_all_pieces(self):
