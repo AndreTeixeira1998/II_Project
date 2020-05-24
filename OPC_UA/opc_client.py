@@ -272,6 +272,15 @@ async def opc_client_run(optimizer, loop):
 		warehouse_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id')
 		m_vars.append(warehouse_in)
 
+		pusher1_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai1')
+		m_vars.append(pusher1_in)
+        
+		pusher2_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai2')
+		m_vars.append(pusher2_in)
+        
+		pusher3_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai3')
+		m_vars.append(pusher3_in)
+
 		cond = asyncio.Event()
 		cond_p1 = asyncio.Event()
 		cond_p2 = asyncio.Event()

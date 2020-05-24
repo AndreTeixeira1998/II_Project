@@ -105,7 +105,30 @@ class OptimizerSubHandler(SubHandler):
 			self.optimizer.tracker.mark_complete(int(val))
 			self.optimizer.tracker.print_tracking_info()
 			self.optimizer.tracker.print_order_status()
-
+            
+		##UNLOAD 1 
+		elif str(
+				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai1" and val != 0:
+			print(f"Piece {val} unload complete")
+			self.optimizer.tracker.mark_complete(int(val))
+			self.optimizer.tracker.print_tracking_info()
+			self.optimizer.tracker.print_order_status()
+		##UNLOAD 2 
+		elif str(
+				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai2" and val != 0:
+			print(f"Piece {val} unload complete")
+			self.optimizer.tracker.mark_complete(int(val))
+			self.optimizer.tracker.print_tracking_info()
+			self.optimizer.tracker.print_order_status()            
+		##UNLOAD 3 
+		elif str(
+				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai3" and val != 0:
+			print(f"Piece {val} unload complete")
+			self.optimizer.tracker.mark_complete(int(val))
+			self.optimizer.tracker.print_tracking_info()
+			self.optimizer.tracker.print_order_status()
+            
+            
 		for machine in self.encoding.keys():
 			if machine in str(node.nodeid.Identifier):
 				if "op" in str(node.nodeid.Identifier) and val is True:
