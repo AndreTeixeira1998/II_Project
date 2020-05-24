@@ -25,7 +25,7 @@ class Tracker:
 		self.order_tracking[order] = 0
 
 	def mark_complete(self, piece_id):
-		#print(f'Mark_completed {piece_id}')
+		print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
@@ -37,6 +37,25 @@ class Tracker:
 			print('Updating processed')
 			curr_order.update_processed(quantity)
 			print('Updated')
+		self.check_cell3_clearance()
+
+	def check_cell3_clearance(self):
+		print(self.pieces_on_transit.keys())
+		if self.pieces_on_transit.keys():
+			for piece_id in self.pieces_on_transit.keys():
+				piece = self.state.pieces[piece_id]
+				if piece.order.order_type == 'Transform':
+					for m in piece.machines:
+						if m == 'Ma_3' or m == 'Mb_3':
+							print('CELL 3 is busy')
+							return False
+			print('CELL 3 is clear')
+			return False
+		else:
+			print('No pieces on factory floor')
+			return True
+
+
 
 	def mark_dispatched(self, piece_id):
 		#print(f'Mark_dispatched {piece_id}')

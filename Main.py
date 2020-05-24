@@ -92,7 +92,13 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 					orders_to_schedule.append(order)
 					idx2remove.append(idx)
 				else:
-					continue
+					if order.order_type == 'Transform':
+						available = order.quantity - optimizer.stock[order.before_type]
+						print(f'Só tenho {available}')
+					elif order.order_type == 'Unload':
+						available = order.quantity - optimizer.stock[order.piece_type]
+						print(f'Só tenho {available}')
+
 			for idx in idx2remove:
 				orders_wait_stock.pop(idx)
 
