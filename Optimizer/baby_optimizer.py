@@ -22,11 +22,14 @@ class Tracker:
 		self.state = state
 
 	def add_order(self, order):
-		self.order_tracking[order] = 0
+		if order not in self.order_tracking.keys():
+			self.order_tracking[order] = 0
 
 	def mark_complete(self, piece_id):
 		print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
+		curr_order.on_factory -= 1
+		curr_order.processed += 1
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
 		self.order_tracking[curr_order] += 1
@@ -58,7 +61,9 @@ class Tracker:
 
 
 	def mark_dispatched(self, piece_id):
-		#print(f'Mark_dispatched {piece_id}')
+		print(f'Mark_dispatched {piece_id} -> order {self.state.pieces[piece_id].order.order_number}')
+		curr_order = self.state.pieces[piece_id].order
+		curr_order.on_factory += 1
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
 		self.state.pieces[piece_id].order.order_activated()
 
@@ -267,19 +272,22 @@ class Optimizer:
 
 	def order_handler(self, order, continue_unload_command=False):
 		self.tracker.add_order(order)
+		low_lim = self.state.pieces_optimized
 		if isinstance(order, TransformOrder):
+			high_lim = self.state.pieces_optimized + order.quantity - (order.processed + order.on_factory)
 			if order.before_type == 4 and order.after_type == 7:
 				print("Wait. That's Illegal")
 				self.block_pieces.clear()
 				return
-			for piece_number in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
+			for piece_number in range(low_lim, high_lim):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
 				self.state.num_pieces += 1
 		elif isinstance(order, UnloadOrder):
+			high_lim = self.state.pieces_optimized + order.quantity - (order.unloaded + order.on_factory)
 			dest_path = {1: [3, 8, 15, 20, 27, 32, 39, 41, 42, 48], 2: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 49],
 						 3: [3, 8, 15, 20, 27, 32, 39, 41, 42, 43, 44, 50]}
-			for piece_number in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
+			for piece_number in range(low_lim, high_lim):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.piece_type, path=dest_path[order.destination], machines=None, tools=None,
 						   order=order))
@@ -383,6 +391,7 @@ class HorOptimizer(Optimizer):
 			state = self.state
 		recipes = self.recipes[f'{frm}->{to}']
 		curr_best = 99999
+		best_seq = []
 		curr_best_idx = 0
 		for idx, recipe in enumerate(recipes):
 			total_wait_time = 0
@@ -467,9 +476,12 @@ class HorOptimizer(Optimizer):
 		cost = simulated_state.get_value()
 		return simulated_state, cost
 
-	def optimize_single_order(self, order: TransformOrder):
-		if order.order_type == 'Transform':   
-			for piece_id in range(order.processed + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
+	def optimize_single_order(self, order):
+		low_lim = self.state.pieces_optimized
+		if order.order_type == 'Transform':
+			high_lim = low_lim + order.quantity - (order.on_factory + order.processed)
+			print(f'###DEBUGGGG Proc:{order.processed} On-fac:{order.on_factory} qtd:{order.quantity}')
+			for piece_id in range(low_lim, high_lim):
 				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
 				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
@@ -477,6 +489,7 @@ class HorOptimizer(Optimizer):
 				self.state.pieces_optimized += 1
 
 		elif order.order_type == 'Unload':
+			high_lim = low_lim + order.quantity - (order.on_factory + order.unloaded)
 			for piece_id in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces_optimized += 1
 

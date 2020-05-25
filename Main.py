@@ -12,7 +12,7 @@ sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, jur
 from GUI import GUI_V2
 from Optimizer.baby_optimizer import HorOptimizer
 from DB.db_handler import *
-from lock import lock
+from lock import lock, optimization_lock
 
 def parse_from_db_unload(data, db):
 	parsed_order = []
@@ -81,6 +81,18 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 
 	while True:
 		lock.acquire()
+
+		if orders_wait_stock:
+			idx2remove = []
+			for idx, order in enumerate(orders_wait_stock):
+				if check_stock(optimizer, order):
+					print(f'Posso fazer a ordem {order.order_number}')
+					orders_received.append(order)
+					idx2remove.append(idx)
+				else:
+					continue
+			orders_wait_stock = [order for idx, order in enumerate(orders_wait_stock) if idx not in idx2remove]
+
 		# Orders received from UDP
 		while not q_udp_in.empty():
 			order = q_udp_in.get()
@@ -95,26 +107,13 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 			optimizer.orders2do.clear()
 
 		# Orders waiting for restock
-		if orders_wait_stock:
-			idx2remove = []
-			for idx, order in enumerate(orders_wait_stock):
-				if check_stock(optimizer, order):
-					idx2remove.append(idx)
-					print((idx))
-					orders_to_schedule.append(order)
-				else:
-					if order.order_type == 'Transform':
-						available = order.quantity - optimizer.stock[order.before_type]
-					elif order.order_type == 'Unload':
-						available = order.quantity - optimizer.stock[order.piece_type]
-			for idx in idx2remove:
-				orders_wait_stock.pop(idx)
+
 
 		# Check if warehouse has enough pieces for each order
 		if orders_received:
 			for idx, order in enumerate(orders_received):
 				if check_stock(optimizer, order):
-					print('TENHO STOCK')
+					print(f'TENHO STOCK para a ordem {order.order_number}')
 					orders_to_schedule.append(order)
 					#orders_received.pop(idx)
 				else:
@@ -133,7 +132,6 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 											   order.after_type, order.quantity, order.max_delay, state = "pending",
 											   processed = order.processed, on_factory = order.on_factory, already_in_db=True)
 					_, cost = optimizer.simulate(sim_order)
-					cost = 0
 					priority = max_delay - cost
 				else:
 					priority = -9999999
@@ -148,13 +146,16 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 				q_orders.put(order)
 			print('## end ##')
 
+		optimization_lock.acquire()
 		for _, order in orders_scheduled:
 			print(f'Optimizing order {order.order_number}')
 			optimizer.order_handler(order)
 			optimizer.optimize_single_order(order)
 			print(f'Optimization complete')
 			optimizer.active_orders.append(order)
+		optimization_lock.release()
 		orders_scheduled.clear()
+
 		lock.release()
 
 
@@ -162,21 +163,40 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 def update_dispatch(optimizer):
 	while True:
 #		print('Update dispatch')
+		optimization_lock.acquire()
 		for machine in reversed(optimizer.state.machines.values()):
-			#print(f'{machine}: {machine.op_list}')
+			#print(f'{machine}: {machine.is_free}')
 			if machine.is_free and machine.op_list:
 				next_op = machine.op_list[0]
 				next_piece = next_op.piece_id
 				if next_op.step == 1:
 					if next_piece in optimizer.tracker.pieces_on_transit:
 						print('WARNING: Piece has already been dispatched')
+						#optimizer.dispatch_queue.append(optimizer.state.pieces[next_piece])
+						machine.make_unavailable()
+					elif next_piece in optimizer.dispatch_queue:
+						print('WARNING: Piece is already staged for dispatch')
 						machine.make_unavailable()
 					else:
 						optimizer.dispatch_queue.append(optimizer.state.pieces[next_piece])
 						machine.make_unavailable()
 				else:
-					machine.make_unavailable()
-		time.sleep(0.01)
+					pass
+					#machine.make_unavailable()
+			elif not(machine.is_free or machine.op_list):
+				pass
+				#machine.make_available()
+
+			#elif (not machine.is_free) and machine.op_list:
+			#	next_op = machine.op_list[0]
+			#	next_piece = next_op.piece_id
+			#	if next_piece in optimizer.dispatch_queue:
+			#		machine.make_available()
+			#	#else:
+			#	#	machine.make_unavailable()
+
+		optimization_lock.release()
+		time.sleep(0.1)
 
 
 def run(optimizer):

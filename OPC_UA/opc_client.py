@@ -14,7 +14,7 @@ from OPC_UA.subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
 from Optimizer.baby_optimizer import Piece
 from Optimizer.baby_optimizer import Pusher
-from lock import lock
+from lock import lock, optimization_lock
 
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 
@@ -106,36 +106,40 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 			cond_pusher3.clear()
 
 	elif optimizer.dispatch_queue:
+		piece = optimizer.dispatch_queue[0]
 		first_type = optimizer.dispatch_queue[0].type
 		if cond.is_set():
 			if optimizer.stock[first_type] <= 0:
 				lock.acquire()
+				optimization_lock.acquire()
 				print('OH SHIT OH FUCK N TENHO PEÇAS PARA ISSO')
-				optimizer.orders2do = copy.deepcopy(optimizer.active_orders)
+				optimizer.orders2do = copy.copy(optimizer.active_orders)
 				optimizer.active_orders.clear()
 				print(optimizer.orders2do)
-				for m in optimizer.state.machines.values():
-					oplist = list(m.op_list)
-					new_oplist = [op for op in m.op_list if op.piece_id  in optimizer.tracker.pieces_on_transit]
-					removed_ops = [op for op in m.op_list if op.piece_id not in optimizer.tracker.pieces_on_transit]
-					for op in removed_ops:
-						m.waiting_time -= op.transform.duration
-					print(f'{m.id} ############')
-					print(oplist)
-					print(new_oplist)
-					print(removed_ops)
-					m.op_list = new_oplist
+				if piece.order.order_type == 'Transform':
+					for m in optimizer.state.machines.values():
+						new_oplist = [op for op in m.op_list if op.piece_id  in optimizer.tracker.pieces_on_transit]
+						removed_ops = [op for op in m.op_list if op.piece_id not in optimizer.tracker.pieces_on_transit]
+						if not new_oplist: m.make_available()
+						for op in removed_ops:
+							m.waiting_time -= op.transform.duration
+						m.op_list = collections.deque(new_oplist)
 				optimizer.dispatch_queue.clear()
 				lock.release()
+				optimization_lock.release()
 			else:
 				print('TA FIXE MANO')
 				piece = optimizer.dispatch_queue.popleft()
 				#print("id: ", piece.id, " path: ", piece.path)
 				# await block_pieces.wait()
-				await sender.send_path(piece, var_write)
-				print(f"Dispatching piece no {piece.id}: ")
-				optimizer.tracker.mark_dispatched(piece.id)
-				cond.clear()
+				if (piece.id not in optimizer.tracker.pieces_on_transit) \
+					and (piece.id not in optimizer.tracker.pieces_complete):
+					await sender.send_path(piece, var_write)
+					print(f"Dispatching piece no {piece.id}: ")
+					optimizer.tracker.mark_dispatched(piece.id)
+					optimizer.print_machine_schedule()
+					cond.clear()
+				await asyncio.sleep(1)
 
 
 async def swap_tools(tool_nodes, optimizer):
@@ -321,9 +325,9 @@ async def opc_client_run(optimizer, loop):
 				charge_P1(client, cond_p1, vars_P1_charge),
 				charge_P2(client, cond_p2, vars_P2_charge),
 				swap_tools(tool_nodes, optimizer),
-				#unload(optimizer, cond_pusher_1),
-				get_stocks(optimizer, stock_nodes)
+				#unload(optimizer, cond_pusher_1)
 			)
+			await get_stocks(optimizer, stock_nodes)
 
 
 if __name__ == '__main__':
