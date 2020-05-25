@@ -8,6 +8,7 @@ from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
 from DB.db_handler import *
+from Optimizer.transfgraph import Machine
 sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, juro por deus que não percebo os  retardanços do windows com as paths
 from GUI import GUI_V2
 from Optimizer.baby_optimizer import HorOptimizer
@@ -198,7 +199,7 @@ def update_dispatch(optimizer):
 		optimization_lock.release()
 		time.sleep(0.1)
 
-
+  
 def run(optimizer):
 	loop = asyncio.new_event_loop()
 	loop.run_until_complete(opc_client_run(optimizer, loop))
@@ -212,7 +213,7 @@ if __name__ == "__main__":
 	db.delete_all_content(['unload_orders', 'transform_orders'])
 
 	optimizer = HorOptimizer()
-	win = GUI_V2(db)
+	win = GUI_V2(db,optimizer)
 
 	Order.give_db(db)
 
@@ -258,7 +259,7 @@ if __name__ == "__main__":
 	# threads.append(t_test)
 	# t_test.start()
 
-	#win.open_GUI()
+	win.open_GUI()
 
 	## Joints all the threads
 	map(lambda x:x.join(),threads)

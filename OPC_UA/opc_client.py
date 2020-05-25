@@ -197,7 +197,7 @@ async def charge_P2(client, cond_p2, charge_var):
 		await sender.write_int16(var_load_tipo_atual, 2)
 		await sender.write_array_int16(var_load_path, dest_path,
 									   path_length)  # set node value using implicit data type
-		await asyncio.sleep(2)
+		# await asyncio.sleep(2)
 		cond_p2.clear()
 
 
@@ -261,6 +261,8 @@ async def opc_client_run(optimizer, loop):
 
 		m_vars = []
 		for step in m_steps:
+			if ".p" in str(step) or "tempo" in str(step): # Para as estatisticas das máquinas
+				m_vars.append(step)
 			nodes = await step.get_children()
 			for node in nodes:
 				m_vars.append(node)
@@ -299,6 +301,15 @@ async def opc_client_run(optimizer, loop):
 
 		warehouse_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id')
 		m_vars.append(warehouse_in)
+
+		pusher1_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai1')
+		m_vars.append(pusher1_in)
+        
+		pusher2_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai2')
+		m_vars.append(pusher2_in)
+        
+		pusher3_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai3')
+		m_vars.append(pusher3_in)
 
 		cond = asyncio.Event()
 		cond_p1 = asyncio.Event()

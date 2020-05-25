@@ -255,6 +255,7 @@ class UnloadOrder(Order):
 		"""
 		if Order._db != None:
 			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", unloaded = self.quantity)
+			Order._db.add_unloaded_pieces(self.piece_type, self.destination)
 	
 	def update_processed(self, quant):
 		"""
@@ -262,6 +263,7 @@ class UnloadOrder(Order):
 		"""
 		if Order._db != None:
 			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, unloaded = quant)
+			Order._db.add_unloaded_pieces(self.piece_type, self.destination)
 
 
 
