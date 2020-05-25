@@ -198,6 +198,37 @@ class DB_handler:
 		return data
 
 
+	# Não testada
+	def insert_machine_stats(self, data):
+		"""
+		data is a list of dictionaries in order of the machines A1, A2, ...
+		"""
+		machines = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"]
+		info = ("Total time", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "Total")
+		
+		for row, machine_id in zip(data, machines):
+			Query = "UPDATE factory.machines SET total_time = %s, P1 = %s, P2 = %s, P3 = %s, P4 = %s, P5 = %s, P6 = %s, P7 = %s, P8 = %s, P9 = %s, total = %s"
+			values = []
+			for col in info:
+				if col not in list(row.keys()):
+					values.append(str(0))
+				else:
+					values.append(str(row[col]))
+			Query += " WHERE machine_type = %s AND transformation_cell = %s"
+			values.append(machine_id[0])
+			values.append(machine_id[1])
+			try:
+				self._cursor.execute(Query,tuple(values))
+			except(Exception, psycopg2.Error) as error:
+				print("Error while connecting to PostgreSQL", error)
+		try:
+			self._connection.commit()
+		except(Exception, psycopg2.Error) as error:
+				print("Error while connecting to PostgreSQL", error)
+
+
+
+
 
 
 	def count_pieces(self):
@@ -213,13 +244,25 @@ class DB_handler:
 
 
 		Query = "SELECT (amount) FROM factory.stored_pieces ORDER BY piece_type"
-		self._cursor.execute(Query)
+		try:
+			self._cursor.execute(Query)
+		except(Exception, psycopg2.Error) as error:
+				print("Error while connecting to PostgreSQL", error)
 		counted = self._cursor.fetchall()
 		counted = [i[0] for i in counted]
 		return counted
 
 
-
+	def add_unloaded_pieces(self, piece_type, destination):
+		"""
+		Adds one piece to the unloaded db in the desired destination
+		"""
+		Query = "UPDATE factory.unloading_zones SET P" + str(piece_type) + " = P" + str(piece_type) + " + 1 WHERE area_id = %s"
+		try:
+			self._cursor.execute(Query,tuple(str(destination)))
+			self._connection.commit()
+		except(Exception, psycopg2.Error) as error:
+			print("Error while connecting to PostgreSQL", error)
 
 	def add_stored_pieces(self, piece_type, amount = 1):
 		"""
@@ -252,13 +295,13 @@ class DB_handler:
 				print("#######       Numero de peças na DB colocado a 0      #######")
 				self.update_stored_pieces(piece_type, 0)
 			return
-		Query = "UPDATE factory.stored_pieces SET amount = amount - "+ str(amount) + " WHERE piece_type = %s"
-		
-		try:
-			self._cursor.execute(Query,tuple(str(piece_type)))
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+		else:
+			Query = "UPDATE factory.stored_pieces SET amount = amount - "+ str(amount) + " WHERE piece_type = %s"
+			try:
+				self._cursor.execute(Query,tuple(str(piece_type)))
+				self._connection.commit()
+			except(Exception, psycopg2.Error) as error:
+				print("Error while connecting to PostgreSQL", error)
 
 
 	def update_stored_pieces(self, piece_type, amount):
@@ -295,7 +338,11 @@ if __name__ == "__main__":
 	# dic = {"curr_state" : "active", "curr_state1": "pending"}
 	# data = db.select("transform_orders", where = dic, operand= "OR" ,print_table= True, order_by= "order_id")
 	# db.update_stored_pieces(3, 23)
-	db.add_stored_pieces(1)
-	db.subtract_stored_pieces(3, 50)
-	data = db.count_pieces()
-	print(data)
+	# db.add_stored_pieces(1)
+	# db.subtract_stored_pieces(3, 50)
+	# data = db.count_pieces()
+
+	data = []
+	for _ in range(9):
+		data.append({"Total time": 1, "P1" : 2, "P2" : 3, "P3" : 4, "P4" : 5, "P5" : 6, "P6" : 7, "P7" : 8, "P8" : 9, "P9" : 10, "Total" : 11})
+	db.insert_machine_stats(data)

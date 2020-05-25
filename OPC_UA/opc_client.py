@@ -169,7 +169,7 @@ async def charge_P2(client, cond_p2, charge_var):
 		await sender.write_int16(var_load_tipo_atual, 2)
 		await sender.write_array_int16(var_load_path, dest_path,
 									   path_length)  # set node value using implicit data type
-		await asyncio.sleep(2)
+		# await asyncio.sleep(2)
 		cond_p2.clear()
 
 
@@ -233,6 +233,8 @@ async def opc_client_run(optimizer, loop):
 
 		m_vars = []
 		for step in m_steps:
+			if ".p" in str(step) or "tempo" in str(step): # Para as estatisticas das máquinas
+				m_vars.append(step)
 			nodes = await step.get_children()
 			for node in nodes:
 				m_vars.append(node)

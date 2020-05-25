@@ -110,21 +110,21 @@ class OptimizerSubHandler(SubHandler):
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai1" and val != 0:
 			print(f"Piece {val} unload complete")
-			self.optimizer.tracker.mark_complete(int(val))
+			self.optimizer.tracker.mark_unloaded(int(val))
 			self.optimizer.tracker.print_tracking_info()
 			self.optimizer.tracker.print_order_status()
 		##UNLOAD 2 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai2" and val != 0:
 			print(f"Piece {val} unload complete")
-			self.optimizer.tracker.mark_complete(int(val))
+			self.optimizer.tracker.mark_unloaded(int(val))
 			self.optimizer.tracker.print_tracking_info()
 			self.optimizer.tracker.print_order_status()            
 		##UNLOAD 3 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai3" and val != 0:
 			print(f"Piece {val} unload complete")
-			self.optimizer.tracker.mark_complete(int(val))
+			self.optimizer.tracker.mark_unloaded(int(val))
 			self.optimizer.tracker.print_tracking_info()
 			self.optimizer.tracker.print_order_status()
             
@@ -134,7 +134,8 @@ class OptimizerSubHandler(SubHandler):
 				if "op" in str(node.nodeid.Identifier) and val is True:
 					# print(f"pop an operation on {self.encoding[machine]}")
 					op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-					# self.optimizer.print_machine_schedule()
+					self.optimizer.print_machine_schedule()
+					print(node.nodeid)
 					self.optimizer.state.machines[self.encoding[machine]].op_list[0].update_next_tool()
 
 				elif "Init" in str(node.nodeid.Identifier) and val is True:

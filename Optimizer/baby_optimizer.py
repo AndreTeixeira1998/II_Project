@@ -38,6 +38,20 @@ class Tracker:
 			curr_order.update_processed(quantity)
 			print('Updated')
 
+	def mark_unloaded(self, piece_id):
+		#print(f'Mark_completed {piece_id}')
+		curr_order = self.state.pieces[piece_id].order
+		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
+		self.pieces_on_transit.pop(piece_id)
+		self.order_tracking[curr_order] += 1
+		quantity = self.order_tracking[curr_order]
+		if quantity == curr_order.get("quantity"): ############################################################### <- AQUI PEDRO, Não sejas nabo
+			curr_order.order_complete()
+		else:
+			print('Updating processed')
+			curr_order.update_processed(quantity)
+			print('Updated')
+
 	def mark_dispatched(self, piece_id):
 		#print(f'Mark_dispatched {piece_id}')
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]

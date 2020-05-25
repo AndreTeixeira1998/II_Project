@@ -3,7 +3,7 @@ from tkinter import ttk
 from threading import Thread
 import time
 
-from stat_manager import *
+from stat_manager import StatMan
 
 columns_orders = ["Id", "Type", "State", "Produced", "In production", "Pending", "Reception time", "Beggining", "End", "Slack"]
 columns_machines = ["Type/Cell", "Total time", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "Total"]
@@ -179,10 +179,11 @@ columns_unload = ["Unload Zone", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8",
 			
 
 class GUI_V2:
-	def __init__(self, db = None, dimensions = "1000x900"):
+	def __init__(self, db = None, optimizer = None, dimensions = "1000x900"):
 
-		self.stat_man = StatMan(columns_orders, columns_machines, columns_unload, db)		# To fetch the statistics from the database
+		self.stat_man = StatMan(columns_orders, columns_machines, columns_unload, db, optimizer)		# To fetch the statistics from the database
 		
+		self.optimizer = optimizer
 		# Only initializes the window
 		self.window = Tk()
 
@@ -214,6 +215,8 @@ class GUI_V2:
 		"""
 		Opens the GUI. The GUI class must have a data base attributed, otherwise it won't work
 		"""
+		time.sleep(10)
+
 		self._glob_flag = True
 		
 		thread = Thread(target=self._draw_statistics, args=())
