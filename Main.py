@@ -12,6 +12,7 @@ sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, jur
 from GUI import GUI_V2
 from Optimizer.baby_optimizer import HorOptimizer
 from DB.db_handler import *
+from lock import lock
 
 def parse_from_db_unload(data, db):
 	parsed_order = []
@@ -31,9 +32,10 @@ def parse_from_db_transformation(data, db):
 
 def check_stock(optimizer, order):
 	if order.order_type == 'Transform':
-		return optimizer.stock[order.before_type] >= order.quantity
+		#print(optimizer.stock[order.before_type])
+		return optimizer.stock[order.before_type] > 0
 	elif order.order_type == 'Unload':
-		return optimizer.stock[order.piece_type] >= order.quantity
+		return optimizer.stock[order.piece_type] > 0
 	else:
 		print(f'FATAL: Invalid order in check_stock()')
 		exit()
@@ -78,27 +80,33 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		pending_orders.clear()
 
 	while True:
+		lock.acquire()
 		# Orders received from UDP
 		while not q_udp_in.empty():
 			order = q_udp_in.get()
 			for o in order:
 				orders_received.append(o)
 
+		if optimizer.orders2do:
+			print('CARALHOOOOOOOO')
+			for order in optimizer.orders2do:
+				print('caralhooooo')
+				orders_received.append(order)
+			optimizer.orders2do.clear()
+
 		# Orders waiting for restock
 		if orders_wait_stock:
 			idx2remove = []
 			for idx, order in enumerate(orders_wait_stock):
 				if check_stock(optimizer, order):
-					orders_to_schedule.append(order)
 					idx2remove.append(idx)
+					print((idx))
+					orders_to_schedule.append(order)
 				else:
 					if order.order_type == 'Transform':
 						available = order.quantity - optimizer.stock[order.before_type]
-						print(f'Só tenho {available}')
 					elif order.order_type == 'Unload':
 						available = order.quantity - optimizer.stock[order.piece_type]
-						print(f'Só tenho {available}')
-
 			for idx in idx2remove:
 				orders_wait_stock.pop(idx)
 
@@ -106,10 +114,11 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		if orders_received:
 			for idx, order in enumerate(orders_received):
 				if check_stock(optimizer, order):
+					print('TENHO STOCK')
 					orders_to_schedule.append(order)
 					#orders_received.pop(idx)
 				else:
-					print('Nao tenho stock para essa porra')
+					print('OHHHHH SHIIITTT N TENHO STOCK')
 					orders_wait_stock.append(order)
 					#orders_received.pop(idx)
 			orders_received.clear()
@@ -144,7 +153,9 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 			optimizer.order_handler(order)
 			optimizer.optimize_single_order(order)
 			print(f'Optimization complete')
+			optimizer.active_orders.append(order)
 		orders_scheduled.clear()
+		lock.release()
 
 
 

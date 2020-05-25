@@ -196,6 +196,7 @@ class UnloadOrder(Order):
 		self.quantity = quantity
 		self.state = state
 		self.unloaded = unloaded
+		self.on_factory = on_factory
 
 
 		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior

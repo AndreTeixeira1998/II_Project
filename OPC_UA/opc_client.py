@@ -5,6 +5,7 @@ from queue import Queue
 
 sys.path.insert(0, "..")
 import logging
+import copy
 import pickle
 import numpy as np
 from array import array
@@ -13,6 +14,7 @@ from OPC_UA.subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
 from Optimizer.baby_optimizer import Piece
 from Optimizer.baby_optimizer import Pusher
+from lock import lock
 
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 
@@ -104,14 +106,36 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 			cond_pusher3.clear()
 
 	elif optimizer.dispatch_queue:
+		first_type = optimizer.dispatch_queue[0].type
 		if cond.is_set():
-			piece = optimizer.dispatch_queue.popleft()
-			#print("id: ", piece.id, " path: ", piece.path)
-			# await block_pieces.wait()
-			await sender.send_path(piece, var_write)
-			print(f"Dispatching piece no {piece.id}: ")
-			optimizer.tracker.mark_dispatched(piece.id)
-			cond.clear()
+			if optimizer.stock[first_type] <= 0:
+				lock.acquire()
+				print('OH SHIT OH FUCK N TENHO PEÇAS PARA ISSO')
+				optimizer.orders2do = copy.deepcopy(optimizer.active_orders)
+				optimizer.active_orders.clear()
+				print(optimizer.orders2do)
+				for m in optimizer.state.machines.values():
+					oplist = list(m.op_list)
+					new_oplist = [op for op in m.op_list if op.piece_id  in optimizer.tracker.pieces_on_transit]
+					removed_ops = [op for op in m.op_list if op.piece_id not in optimizer.tracker.pieces_on_transit]
+					for op in removed_ops:
+						m.waiting_time -= op.transform.duration
+					print(f'{m.id} ############')
+					print(oplist)
+					print(new_oplist)
+					print(removed_ops)
+					m.op_list = new_oplist
+				optimizer.dispatch_queue.clear()
+				lock.release()
+			else:
+				print('TA FIXE MANO')
+				piece = optimizer.dispatch_queue.popleft()
+				#print("id: ", piece.id, " path: ", piece.path)
+				# await block_pieces.wait()
+				await sender.send_path(piece, var_write)
+				print(f"Dispatching piece no {piece.id}: ")
+				optimizer.tracker.mark_dispatched(piece.id)
+				cond.clear()
 
 
 async def swap_tools(tool_nodes, optimizer):

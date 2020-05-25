@@ -175,6 +175,8 @@ class Optimizer:
 		self.transposition_table = {}
 		self.pusher = Pusher()
 		self.dispatch_queue = collections.deque([])
+		self.active_orders = []
+		self.orders2do = []
 		setup.optimizer_init(self)
 
 	def update_state(self, node, val):
