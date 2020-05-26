@@ -14,7 +14,7 @@ from OPC_UA.subhandles import OptimizerSubHandler
 from Optimizer.baby_optimizer import BabyOptimizer
 from Optimizer.baby_optimizer import Piece
 from Optimizer.baby_optimizer import Pusher
-from lock import lock, optimization_lock
+from lock import lock, optimization_lock, mega_mutex
 
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 
@@ -79,32 +79,37 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 	PIECES_TO_SEND = 3
 
 	if optimizer.pusher.dispatch_queue_1 and cond_pusher1.is_set():
-		for p in range(PIECES_TO_SEND):
-			if optimizer.pusher.dispatch_queue_1 and optimizer.pusher.count_1 < 3:
-				optimizer.pusher.count_1 += 1
-				piece = optimizer.pusher.dispatch_queue_1.popleft()
-				optimizer.dispatch_queue.appendleft(piece)
-		if optimizer.pusher.count_1 >= 3:
-			cond_pusher1.clear()
+		first_piece = optimizer.pusher.dispatch_queue_1[0]
+		if optimizer.stock[first_piece.type]:
+			for p in range(PIECES_TO_SEND):
+				if optimizer.pusher.dispatch_queue_1 and optimizer.pusher.count_1 < 3:
+					optimizer.pusher.count_1 += 1
+					piece = optimizer.pusher.dispatch_queue_1.popleft()
+					optimizer.dispatch_queue.appendleft(piece)
+			if optimizer.pusher.count_1 >= 3:
+				cond_pusher1.clear()
 
 	elif optimizer.pusher.dispatch_queue_2 and cond_pusher2.is_set():
-		for p in range(PIECES_TO_SEND):
-			if optimizer.pusher.dispatch_queue_2 and optimizer.pusher.count_2 < 3:
-				optimizer.pusher.count_2 += 1
-				piece = optimizer.pusher.dispatch_queue_2.popleft()
-				optimizer.dispatch_queue.appendleft(piece)
-		if optimizer.pusher.count_2 >= 3:
-			cond_pusher2.clear()
+		first_piece = optimizer.pusher.dispatch_queue_2[0]
+		if optimizer.stock[first_piece.type]:
+			for p in range(PIECES_TO_SEND):
+				if optimizer.pusher.dispatch_queue_2 and optimizer.pusher.count_2 < 3:
+					optimizer.pusher.count_2 += 1
+					piece = optimizer.pusher.dispatch_queue_2.popleft()
+					optimizer.dispatch_queue.appendleft(piece)
+			if optimizer.pusher.count_2 >= 3:
+				cond_pusher2.clear()
 
 	elif optimizer.pusher.dispatch_queue_3 and cond_pusher3.is_set():
-		for p in range(PIECES_TO_SEND):
-			if optimizer.pusher.dispatch_queue_3 and optimizer.pusher.count_3 < 3:
-				optimizer.pusher.count_3 += 1
-				piece = optimizer.pusher.dispatch_queue_3.popleft()
-				optimizer.dispatch_queue.appendleft(piece)
-		if optimizer.pusher.count_3 >= 3:
-			cond_pusher3.clear()
-
+		first_piece = optimizer.pusher.dispatch_queue_3[0]
+		if optimizer.stock[first_piece.type]:
+			for p in range(PIECES_TO_SEND):
+				if optimizer.pusher.dispatch_queue_3 and optimizer.pusher.count_3 < 3:
+					optimizer.pusher.count_3 += 1
+					piece = optimizer.pusher.dispatch_queue_3.popleft()
+					optimizer.dispatch_queue.appendleft(piece)
+			if optimizer.pusher.count_3 >= 3:
+				cond_pusher3.clear()
 	elif optimizer.dispatch_queue:
 		piece = optimizer.dispatch_queue[0]
 		first_type = optimizer.dispatch_queue[0].type
@@ -124,6 +129,13 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 						for op in removed_ops:
 							m.waiting_time -= op.transform.duration
 						m.op_list = collections.deque(new_oplist)
+				else:
+					optimizer.pusher.dispatch_queue_1.clear()
+					optimizer.pusher.dispatch_queue_2.clear()
+					optimizer.pusher.dispatch_queue_3.clear()
+					cond_pusher1.set()
+					cond_pusher2.set()
+					cond_pusher3.set()
 				optimizer.dispatch_queue.clear()
 				lock.release()
 				optimization_lock.release()

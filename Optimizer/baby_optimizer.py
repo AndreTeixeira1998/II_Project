@@ -9,7 +9,7 @@ from Optimizer.pathing.dijkstra import dijkstra_conveyors
 from OPC_UA.subhandles import OptimizerSubHandler
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 from Optimizer.config import setup
-
+from lock import mega_mutex
 TOOL_SWAP_DURATION = 20
 OPTIMIZATION_TIMEOUT = 60
 
@@ -65,9 +65,11 @@ class Tracker:
 		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
+		curr_order.on_factory -= 1
+		curr_order.unloaded += 1
 		self.order_tracking[curr_order] += 1
 		quantity = self.order_tracking[curr_order]
-		if quantity == curr_order.get("quantity"): ############################################################### <- AQUI PEDRO, Não sejas nabo
+		if quantity == curr_order.get("quantity"):
 			curr_order.order_complete()
 		else:
 			print('Updating processed')
