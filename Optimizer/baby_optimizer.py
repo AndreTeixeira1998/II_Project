@@ -9,7 +9,7 @@ from Optimizer.pathing.dijkstra import dijkstra_conveyors
 from OPC_UA.subhandles import OptimizerSubHandler
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 from Optimizer.config import setup
-from lock import mega_mutex
+from lock import *
 TOOL_SWAP_DURATION = 20
 OPTIMIZATION_TIMEOUT = 60
 
@@ -41,24 +41,7 @@ class Tracker:
 			curr_order.update_processed(quantity)
 			print('Updated')
 		self.check_cell3_clearance()
-
-	def check_cell3_clearance(self):
-		print(self.pieces_on_transit.keys())
-		if self.pieces_on_transit.keys():
-			for piece_id in self.pieces_on_transit.keys():
-				piece = self.state.pieces[piece_id]
-				if piece.order.order_type == 'Transform':
-					for m in piece.machines:
-						if m == 'Ma_3' or m == 'Mb_3':
-							print('CELL 3 is busy')
-							return False
-			print('CELL 3 is clear')
-			return False
-		else:
-			print('No pieces on factory floor')
-			return True
-
-
+		self.check_mb3_clearance()
 
 	def mark_unloaded(self, piece_id):
 		#print(f'Mark_completed {piece_id}')
@@ -93,42 +76,59 @@ class Tracker:
 			pass
 			print(f"Order {order.order_number}: {self.order_tracking[order]}/{order.quantity}")
 
+	def check_cell3_clearance(self):
+		if self.pieces_on_transit.keys():
+			for piece_id in self.pieces_on_transit.keys():
+				piece = self.state.pieces[piece_id]
+				if piece.order.order_type == 'Transform':
+					for m in piece.machines:
+						if m == 'Ma_3' or m == 'Mb_3':
+							print('CELL 3 is busy')
+							cell3_is_clear.clear()
+							return False
+			print('CELL 3 is clear')
+			cell3_is_clear.set()
+			return True
+		else:
+			print('No pieces on factory floor')
+			cell3_is_clear.set()
+			return True
 
-class Recipe:
-	def __init__(self, before_type, end_type, trans_path):
-		self.before_type = before_type
-		self.end_type = end_type
-		self.trans_path = trans_path
-
+	def check_mb3_clearance(self):
+		if self.pieces_on_transit.keys():
+			for piece_id in self.pieces_on_transit.keys():
+				piece = self.state.pieces[piece_id]
+				if piece.order.order_type == 'Transform':
+					for m in piece.machines:
+						if m == 'Mb_3':
+							print('Machine B3 is busy')
+							mb3_is_clear.clear()
+							return False
+			print('machine B3 is clear')
+			mb3_is_clear.set()
+			return True
+		else:
+			print('No pieces on factory floor')
+			mb3_is_clear.set()
+			return True
 
 # TODO adaptar isto
 
 class Pusher():
 	def __init__(self):
-
 		self.dispatch_queue_1 = collections.deque([])
 		self.dispatch_queue_2 = collections.deque([])
 		self.dispatch_queue_3 = collections.deque([])
-
-		self.virginity = []  # wut
-
 		self.count_1 = 0
 		self.count_2 = 0
 		self.count_3 = 0
 
 	def push(self, order):
-
 		if order.destination == 1:
-			# queue1= self.dispatch_queue_1
-			# print(queue1)
 			return self.dispatch_queue_1.append(order)
 		if order.destination == 2:
-			# queue2= self.dispatch_queue_2
-			# print(queue2)
 			return self.dispatch_queue_2.append(order)
 		if order.destination == 3:
-			# queue3= self.dispatch_queue_3
-			# print(queue3)
 			return self.dispatch_queue_3.append(order)
 
 
@@ -186,17 +186,19 @@ class Optimizer:
 	def __init__(self):
 		self.factory_state = {}  # variaveis monitorizadas por opc-ua
 		self.transf_graph = {}
-		self.path_graph = PathGraph()
+		self.path_graph = None
+		self.direct_graph = PathGraph()
 		self.reverse_graph = PathGraph()
 		self.recipes = {}
+		self.direct_recipes = {}
+		self.reverse_recipes = {}
 		self.stock = {}
 		self.state = State()
-		self.block_pieces = asyncio.Event()
 		self.tracker = Tracker(self.state)
-		self.transposition_table = {}
 		self.pusher = Pusher()
 		self.dispatch_queue = collections.deque([])
 		self.active_orders = []
+		self.is_reversed = False
 		self.orders2do = []
 		setup.optimizer_init(self)
 
@@ -286,15 +288,16 @@ class Optimizer:
 			return duration, path
 
 
-	def order_handler(self, order, continue_unload_command=False):
+	def order_handler(self, order):
 		self.tracker.add_order(order)
 		low_lim = self.state.pieces_optimized
 		if isinstance(order, TransformOrder):
 			high_lim = self.state.pieces_optimized + order.quantity - (order.processed + order.on_factory)
 			if order.before_type == 4 and order.after_type == 7:
-				print("Wait. That's Illegal")
-				self.block_pieces.clear()
-				return
+				if (order.processed + order.on_factory) < order.quantity:
+					self.reset()
+					self.reverse()
+
 			for piece_number in range(low_lim, high_lim):
 				self.state.pieces[piece_number] = \
 					(Piece(piece_number, order.before_type, path=None, machines=None, tools=None, order=order))
@@ -314,82 +317,6 @@ class Optimizer:
 					self.pusher.dispatch_queue_2.append(self.state.pieces[piece_number])
 				elif order.destination == 3:
 					self.pusher.dispatch_queue_3.append(self.state.pieces[piece_number])
-'''
-print("===>state num:  ", self.state.num_pieces)
-						print("===>state quantity:  ", order.quantity)
-						if(order.quantity > 3):
-							order.quantity = order.quantity - 3
-						print("===>state restantes:  ", order.quantity)
-'''
-
-
-class BabyOptimizer(Optimizer):
-	'''
-	Simple optimizer for multiple isolated cells .
-	Greedy approach - only cares about the faster way
-		for next piece.
-	Priority: First come fist served (Reserves machine if needed)
-	Time Complexity: O(n)
-	'''
-
-	def compute_transform(self, piece_id, frm: str, to: str, search=dijkstra, debug=False, state=None):
-		# TODO Add check for non valid transforms
-		duration = float("inf")
-		if state is None:
-			state = self.state
-		for cell, graph in zip(self.transf_graph.keys(), self.transf_graph.values()):
-			n_duration, n_path, n_trans_path = search(graph, frm, to)
-			if n_duration < duration:
-				duration = n_duration
-				path = n_path
-				trans_path = n_trans_path
-		if debug:
-			print(f"\r\nComputing transform path for piece {piece_id}: {frm} -> {to}")
-			print("Shortest path {}, ETA = {} s".format([piece.id for piece in path], duration))
-			print("Sequence of transforms: {}".format([str(transform) for transform in trans_path]))
-
-		total_machine_wait = 0
-		for step, trans in enumerate(trans_path, 1):
-			# Account for Tool Swapping
-			if state.machines[trans.machine.id].curr_tool == trans.tool:
-				tool_swap = 0
-			else:
-				tool_swap = TOOL_SWAP_DURATION
-			# Reserves Machine until current transform is complete
-			if state.machines[trans.machine.id].waiting_time > total_machine_wait:
-				state.machines[trans.machine.id].update_wait_time(trans.duration + tool_swap)
-			else:
-				lock_duration = total_machine_wait - state.machines[trans.machine.id].waiting_time
-				state.machines[trans.machine.id].update_wait_time(lock_duration + trans.duration + tool_swap)
-			# Update Machines
-			total_machine_wait = state.machines[trans.machine.id].waiting_time
-			state.machines[trans.machine.id].add_op(Operation(piece_id, trans, step, total_machine_wait))
-			state.machines[trans.machine.id].curr_tool = trans.tool
-
-			if debug:
-				print(f"Added {trans.duration}s wait  on {trans.machine}")
-
-		return duration, path, trans_path
-
-
-	def optimize_all_pieces(self):
-		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
-			if (self.state.pieces[piece_id].order.order_type == "Transform"):
-				# Todo: Change Piece types to int
-				before_type = self.state.pieces[piece_id].order.before_type
-				after_type = self.state.pieces[piece_id].order.after_type
-				_, _, trans_path = self.compute_transform(piece_id, f"P{before_type}", f"P{after_type}", debug=False)
-				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
-				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-				self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
-				self.state.pieces_optimized += 1
-			else:
-				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
-				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
-				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
-				self.state.pieces_optimized += 1
-
-		return self.state
 
 
 class HorOptimizer(Optimizer):
@@ -496,7 +423,6 @@ class HorOptimizer(Optimizer):
 		low_lim = self.state.pieces_optimized
 		if order.order_type == 'Transform':
 			high_lim = low_lim + order.quantity - (order.on_factory + order.processed)
-			print(f'###DEBUGGGG Proc:{order.processed} On-fac:{order.on_factory} qtd:{order.quantity}')
 			for piece_id in range(low_lim, high_lim):
 				trans_path = self.compute_transform(piece_id, order.before_type, order.after_type, debug=False)
 				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
@@ -509,71 +435,52 @@ class HorOptimizer(Optimizer):
 			for piece_id in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces_optimized += 1
 
-		#print('Optimized:')
+		print('Optimized:')
+		self.print_machine_schedule()
+		#self.print_pusher_queues()
+		return self.state
+
+	def reset(self, cond_pusher1 = cond_pusher_1, cond_pusher2=cond_pusher_2, cond_pusher3=cond_pusher_3):
+		lock.acquire()
+		optimization_lock.acquire()
+		self.tracker.check_cell3_clearance()
+		self.tracker.check_mb3_clearance()
+		self.orders2do = copy.copy(self.active_orders)
+		self.active_orders.clear()
+
+		for m in self.state.machines.values():
+			new_oplist = [op for op in m.op_list if op.piece_id in self.tracker.pieces_on_transit]
+			removed_ops = [op for op in m.op_list if op.piece_id not in self.tracker.pieces_on_transit]
+			if not new_oplist:
+				print(f'MAKING {m.id} available')
+				m.make_available()
+			for op in removed_ops:
+				m.waiting_time -= op.transform.duration
+			m.op_list = collections.deque(new_oplist)
+
+		self.pusher.dispatch_queue_1.clear()
+		self.pusher.dispatch_queue_2.clear()
+		self.pusher.dispatch_queue_3.clear()
+		cond_pusher1.set()
+		cond_pusher2.set()
+		cond_pusher3.set()
+
+		self.dispatch_queue.clear()
 		self.print_machine_schedule()
 		self.print_pusher_queues()
-		return self.state
+		lock.release()
+		optimization_lock.release()
 
-	def optimize_all_pieces(self):
-		for piece_id in range(self.state.pieces_optimized, self.state.num_pieces):
-			# Todo: Change Piece types to int
-			if self.state.pieces[piece_id].order.order_type == 'Transform':
-				before_type = self.state.pieces[piece_id].order.before_type
-				after_type = self.state.pieces[piece_id].order.after_type
-				trans_path = self.compute_transform(piece_id, before_type, after_type, debug=False)
-				self.state.pieces[piece_id].machines = [trans.machine.id for trans in trans_path]
-				self.state.pieces[piece_id].tools = [trans.tool for trans in trans_path]
-				self.state.pieces[piece_id].path = self.compute_path(self.reverse_graph, trans_path)
-			elif self.state.pieces[piece_id].order.order_type == 'Unload':
-				# print("testing PATHHHHHH: ", self.state.pieces[piece_id].path)
-				self.state.pieces[piece_id].machines = [0, 0, 0, 0, 0, 0]
-				self.state.pieces[piece_id].tools = [0, 0, 0, 0, 0, 0]
-			# self.state.pieces_optimized += 1
-			self.state.pieces_optimized += 1
-		print('Optimized:')
-		#self.print_machine_schedule()
-		return self.state
+	def reverse(self):
+		self.path_graph = self.reverse_graph
+		self.recipes = self.reverse_recipes
+		self.is_reversed = True
+		flag.set()
+
+	def direct(self):
+		self.path_graph = self.direct_graph
+		self.recipes = self.direct_recipes
+		self.is_reversed = False
+		reverse_flag.set()
 
 
-if __name__ == '__main__':
-
-	optimizer = HorOptimizer()
-	print("Using BabyOptimizer")
-
-	# optimizer = DaddyOptimizer()
-	# print("Using DaddyOptimizer\r\n")
-
-	fake_order = []
-
-	fake_order.append(TransformOrder(order_type="Transform", order_number=1,
-									 max_delay=2000, before_type=3, after_type=4, quantity=3))
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-	#								 max_delay=2000, before_type=2, after_type=6, quantity=3))
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-	#								 max_delay=2000, before_type=4, after_type=5, quantity=3))
-
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=2,
-	#								 max_delay=2000, before_type=4, after_type=5, quantity=10))
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=3,
-	#								 max_delay=2000, before_type=7, after_type=9, quantity=10))
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=4,
-	#								 max_delay=2000, before_type=4, after_type=8, quantity=7))
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=5,
-	#								 max_delay=2000, before_type=1, after_type=9, quantity=20))
-	# fake_order.append(TransformOrder(order_type="Transform", order_number=6,
-	#								 max_delay=2000, before_type=4, after_type=7, quantity=20))
-
-	for order in fake_order:
-		print(
-			f"Order number {order.order_number}. {order.quantity} transforms from P{order.before_type} to P{order.after_type}")
-		optimizer.order_handler(order)
-		print(f'Total number of pieces: {optimizer.state.num_pieces}\r\n')
-
-	print(f'Optimizing {optimizer.state.num_pieces} pieces')
-	start = time.time()
-	optimizer.state = optimizer.optimize_all_pieces()
-	end = time.time()
-	print(f'Optmized {optimizer.state.pieces_optimized}/{optimizer.state.num_pieces} '
-		  f'pieces in {(end - start) * 1000}ms')
-	print(f'{optimizer.state}')
-	optimizer.print_machine_schedule()

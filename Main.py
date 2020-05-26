@@ -81,7 +81,6 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		pending_orders.clear()
 
 	while True:
-		lock.acquire()
 
 		if orders_wait_stock:
 			idx2remove = []
@@ -147,24 +146,33 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 				q_orders.put(order)
 			print('## end ##')
 
-		optimization_lock.acquire()
 		for _, order in orders_scheduled:
 			print(f'Optimizing order {order.order_number}')
 			optimizer.order_handler(order)
 			optimizer.optimize_single_order(order)
 			print(f'Optimization complete')
 			optimizer.active_orders.append(order)
-		optimization_lock.release()
-		orders_scheduled.clear()
+		#optimization_lock.release()
 
-		lock.release()
+
+		if optimizer.is_reversed:
+			print('ma',optimizer.state.machines['Ma_3'].op_list)
+			print('mc',optimizer.state.machines['Mc_3'].op_list)
+			if not optimizer.state.machines['Ma_3'].op_list \
+					and not optimizer.state.machines['Mc_3'].op_list:
+				optimizer.reset()
+				print('RESETTTTTTTTTTTTTT')
+				optimizer.direct()
+				print('SENTIDO DIRETO')
+
+		orders_scheduled.clear()
 
 
 
 def update_dispatch(optimizer):
 	while True:
 #		print('Update dispatch')
-		optimization_lock.acquire()
+		#optimization_lock.acquire()
 		for machine in reversed(optimizer.state.machines.values()):
 			#print(f'{machine}: {machine.is_free}')
 			if machine.is_free and machine.op_list:
@@ -196,7 +204,7 @@ def update_dispatch(optimizer):
 			#	#else:
 			#	#	machine.make_unavailable()
 
-		optimization_lock.release()
+		#optimization_lock.release()
 		time.sleep(0.1)
 
   

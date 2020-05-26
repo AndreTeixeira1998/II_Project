@@ -67,7 +67,7 @@ class OptimizerSubHandler(SubHandler):
 		# CRIAR OUTRO SUB HANDLER
 		if str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
-			# print("Release the prisioners")
+			print("Release the prisioners")
 			self.cond.set()
 
 		elif str(
@@ -134,8 +134,8 @@ class OptimizerSubHandler(SubHandler):
 				if "op" in str(node.nodeid.Identifier) and val is True:
 					# print(f"pop an operation on {self.encoding[machine]}")
 					op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-					self.optimizer.print_machine_schedule()
-					print(node.nodeid)
+					#self.optimizer.print_machine_schedule()
+					#print(node.nodeid)
 					self.optimizer.state.machines[self.encoding[machine]].op_list[0].update_next_tool()
 
 				elif "Init" in str(node.nodeid.Identifier) and val is True:

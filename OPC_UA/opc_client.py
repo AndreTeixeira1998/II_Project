@@ -11,10 +11,11 @@ import numpy as np
 from array import array
 from asyncua import Client, Node, ua
 from OPC_UA.subhandles import OptimizerSubHandler
-from Optimizer.baby_optimizer import BabyOptimizer
+from Optimizer.baby_optimizer import HorOptimizer
 from Optimizer.baby_optimizer import Piece
 from Optimizer.baby_optimizer import Pusher
-from lock import lock, optimization_lock, mega_mutex
+from lock import *
+
 
 from Receive_client_orders.Order import TransformOrder, UnloadOrder
 
@@ -73,10 +74,28 @@ class OnePiece():
 		return
 
 
-async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pusher3):
+async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pusher3, flag, reverse_flag):
 	# print("######################debug: write() started")
 	sender = OnePiece()
 	PIECES_TO_SEND = 3
+
+	# Direct -> Reverse
+	if flag.is_set():
+		print('LOCKKKED')
+		if cell3_is_clear.is_set():
+			print('UNLOCKKKED')
+			flag.clear()
+		else:
+			return
+
+	# Reverse -> Direct
+	elif reverse_flag.is_set():
+		print('Locked to reverse')
+		if mb3_is_clear.is_set():
+			print('UNLOCKKKED to reverse')
+			reverse_flag.clear()
+		else:
+			return
 
 	if optimizer.pusher.dispatch_queue_1 and cond_pusher1.is_set():
 		first_piece = optimizer.pusher.dispatch_queue_1[0]
@@ -110,35 +129,13 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 					optimizer.dispatch_queue.appendleft(piece)
 			if optimizer.pusher.count_3 >= 3:
 				cond_pusher3.clear()
+
 	elif optimizer.dispatch_queue:
 		piece = optimizer.dispatch_queue[0]
 		first_type = optimizer.dispatch_queue[0].type
 		if cond.is_set():
 			if optimizer.stock[first_type] <= 0:
-				lock.acquire()
-				optimization_lock.acquire()
-				print('OH SHIT OH FUCK N TENHO PEÇAS PARA ISSO')
-				optimizer.orders2do = copy.copy(optimizer.active_orders)
-				optimizer.active_orders.clear()
-				print(optimizer.orders2do)
-				if piece.order.order_type == 'Transform':
-					for m in optimizer.state.machines.values():
-						new_oplist = [op for op in m.op_list if op.piece_id  in optimizer.tracker.pieces_on_transit]
-						removed_ops = [op for op in m.op_list if op.piece_id not in optimizer.tracker.pieces_on_transit]
-						if not new_oplist: m.make_available()
-						for op in removed_ops:
-							m.waiting_time -= op.transform.duration
-						m.op_list = collections.deque(new_oplist)
-				else:
-					optimizer.pusher.dispatch_queue_1.clear()
-					optimizer.pusher.dispatch_queue_2.clear()
-					optimizer.pusher.dispatch_queue_3.clear()
-					cond_pusher1.set()
-					cond_pusher2.set()
-					cond_pusher3.set()
-				optimizer.dispatch_queue.clear()
-				lock.release()
-				optimization_lock.release()
+				optimizer.reset()
 			else:
 				print('TA FIXE MANO')
 				piece = optimizer.dispatch_queue.popleft()
@@ -149,7 +146,7 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 					await sender.send_path(piece, var_write)
 					print(f"Dispatching piece no {piece.id}: ")
 					optimizer.tracker.mark_dispatched(piece.id)
-					optimizer.print_machine_schedule()
+					#optimizer.print_machine_schedule()
 					cond.clear()
 				await asyncio.sleep(1)
 
@@ -202,10 +199,8 @@ async def charge_P2(client, cond_p2, charge_var):
 	var_load_tipo_atual = client.get_node(
 		"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].tipo_atual")
 
-	# if (await charge_var.get_value()):
-	# await cond_p2.wait()
+
 	if cond_p2:
-		# print("OOOOOOOOOOOOOOOOOOOOOOOOOOOO", await charge_var.get_value())
 		await sender.write_int16(var_load_tipo_atual, 2)
 		await sender.write_array_int16(var_load_path, dest_path,
 									   path_length)  # set node value using implicit data type
@@ -323,13 +318,6 @@ async def opc_client_run(optimizer, loop):
 		pusher3_in = client.get_node('ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.la_vai3')
 		m_vars.append(pusher3_in)
 
-		cond = asyncio.Event()
-		cond_p1 = asyncio.Event()
-		cond_p2 = asyncio.Event()
-
-		cond_pusher_1 = asyncio.Event()
-		cond_pusher_2 = asyncio.Event()
-		cond_pusher_3 = asyncio.Event()
 		cond_pusher_1.set()
 		cond_pusher_2.set()
 		cond_pusher_3.set()
@@ -341,10 +329,9 @@ async def opc_client_run(optimizer, loop):
 		await read(client, m_vars, handler)
 
 		# loop = asyncio.get_event_loop()
-
 		while True:
 			await asyncio.gather(
-				write(var_write, optimizer, cond, cond_pusher_1, cond_pusher_2, cond_pusher_3),
+				write(var_write, optimizer, cond, cond_pusher_1, cond_pusher_2, cond_pusher_3, flag, reverse_flag),
 				charge_P1(client, cond_p1, vars_P1_charge),
 				charge_P2(client, cond_p2, vars_P2_charge),
 				swap_tools(tool_nodes, optimizer),
