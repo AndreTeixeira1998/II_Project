@@ -267,13 +267,26 @@ async def opc_client_run(optimizer, loop):
 		m_steps += await ma_3.get_children() + await mb_3.get_children() + await mc_3.get_children()
 
 		m_vars = []
+		tempo_as_GVL = True
 		for step in m_steps:
-			if ".p" in str(step) or "tempo" in str(step): # Para as estatisticas das máquinas
-				m_vars.append(step)
+			# Para as estatisticas das máquinas
+			if not tempo_as_GVL:
+				if ".p" in str(step) or "tempo" in str(step):
+					m_vars.append(step)
+			else:
+				if ".p" in str(step):
+					m_vars.append(step)
 			nodes = await step.get_children()
 			for node in nodes:
 				m_vars.append(node)
 
+		if tempo_as_GVL:
+			aux = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"] # Para as estatisticas das máquinas
+			for i in aux:
+				tempo = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.tempo_" + i)
+				m_vars.append(tempo)
+
+				
 		tool_nodes = {
 			'Ma_1': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c1t3"),
 			'Ma_2': client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.next_tool_c3t3"),

@@ -1,12 +1,12 @@
 import psycopg2
 
 class DB_handler:
-	def __init__(self):
+	def __init__(self, host = "192.168.99.100", port = "5432"):
 		try:
 			self._connection = psycopg2.connect(user = "ii",
 									password = "iisuckz",
-									host = "192.168.99.100",
-									port = "5432") #https://stackoverflow.com/questions/32812463/setting-schema-for-all-queries-of-a-connection-in-psycopg2-getting-race-conditi
+									host = host,
+									port = port) #https://stackoverflow.com/questions/32812463/setting-schema-for-all-queries-of-a-connection-in-psycopg2-getting-race-conditi
 
 
 			self._cursor = self._connection.cursor()
@@ -34,7 +34,21 @@ class DB_handler:
 			"""
 			print(pgsql)
 			self.tables = ("pieces", "transform_orders", "unload_orders", "stock_orders", "orders", "operations","machines", "transformations", "transform_operations", "unloading_zones", "unload_operations")
-
+			
+			self._column_dict = {}
+			for table in self.tables:
+				Query = "SELECT * FROM factory." + table + " LIMIT 0"
+				self._cursor.execute(Query)
+				colnames = [names[0] for names in self._cursor.description]
+				self._column_dict[table] = colnames
+			
+			check_unloadig_zones = self.select("unloading_zones")
+			if not check_unloadig_zones:
+				for i in range(1 ,4):
+					Query = "INSERT INTO factory.unloading_zones (area_id) VALUES (%s)"
+					self._cursor.execute(Query,tuple(str(i)))
+					self._connection.commit()
+		
 		except(Exception, psycopg2.Error) as error:
 			print("Error while connecting to PostgreSQL", error) 
 
@@ -42,10 +56,13 @@ class DB_handler:
 		self.close()
 
 	def _get_columns(self, table):
-		Query = "SELECT * FROM factory." + table + " LIMIT 0"
-
-		self._cursor.execute(Query)
-		colnames = [names[0] for names in self._cursor.description]
+		if table in self._column_dict:
+			colnames = self._column_dict[table]
+		else:
+			Query = "SELECT * FROM factory." + table + " LIMIT 0"
+			self._cursor.execute(Query)
+			colnames = [names[0] for names in self._cursor.description]
+			self._column_dict[table] = colnames
 		return colnames
 
 	def close(self):
@@ -108,11 +125,23 @@ class DB_handler:
 		Query = "UPDATE factory." + table + " SET "
 		colnames = self._get_columns(table)
 		values = []
+		debug = None
 		for key, vals in kwargs.items():
 			if key in colnames:
 				Query += key + " = %s,"
 				values.append(str(vals))
+				debug = 1
 		Query = Query[:-1]
+
+		if debug == None:
+			print("Colunas não iseridas ou não existentes")
+			print("Tabela : ", table)
+			print("Onde : ", where)
+			print("Conteudo : ")
+			for k in kwargs.keys():
+				print("\t", k, " = ", kwargs[k])
+
+			return
 
 		condition = []
 		Query += " WHERE "

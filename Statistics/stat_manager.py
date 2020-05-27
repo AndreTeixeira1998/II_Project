@@ -16,8 +16,11 @@ class StatMan:
 		self._columns_machines = columns_machines
 		self._columns_unload = columns_unload
 
-		
-		self._node_id = "|var|CODESYS Control Win V3 x64.Application.tapetes."
+		self.tempo_as_GVL = True
+		if self.tempo_as_GVL:
+			self._node_id = "|var|CODESYS Control Win V3 x64.Application."
+		else:	
+			self._node_id = "|var|CODESYS Control Win V3 x64.Application.tapetes."
 
 		self._machine_node = {"A1" : "c1t3", "A2" : "c3t3", "A3" : "c5t3", "B1" : "c1t4", "B2" : "c3t4", "B3" : "c5t4", "C1" : "c1t5", "C2" : "c3t5", "C3" : "c5t5"}
 		self._machine_vars = {"A" : ["tempo", "p1", "p2", "p6" , "p8", "ptotal"], "B" : ["tempo", "p1", "p3", "p7", "ptotal"], "C" : ["tempo", "p1", "p2", "p4", "p8", "ptotal"]}
@@ -95,9 +98,18 @@ class StatMan:
 						#print(self._node_id + self._machine_node[id] + "." + self._translator[columns])
 						#print(self._optimizer.factory_state.keys())
 						try:
-							v.append(self._optimizer.factory_state[self._node_id + self._machine_node[id] + "." + self._translator[columns]])
-							if self._translator[columns] == "tempo":
-								v[-1] = int(v[-1]/1000)
+							if self.tempo_as_GVL:
+								if self._translator[columns] == "tempo":
+									v.append(self._optimizer.factory_state[self._node_id + "GVL.tempo_" + id])
+									v[-1] = int(v[-1]/1000)
+									v.append(123)
+								else:	
+									v.append(self._optimizer.factory_state[self._node_id + "tapetes." + self._machine_node[id] + "." + self._translator[columns]])
+									v.append(69)
+							else:
+								v.append(self._optimizer.factory_state[self._node_id + self._machine_node[id] + "." + self._translator[columns]])
+								if self._translator[columns] == "tempo":
+									v[-1] = int(v[-1]/1000)
 						except Exception as error:
 							# print("OPC UA ainda a ler a subscrever(", error, ")")
 							v.append(0)
