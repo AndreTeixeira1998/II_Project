@@ -24,6 +24,7 @@ class Tracker:
 	def add_order(self, order):
 		if order not in self.order_tracking.keys():
 			self.order_tracking[order] = 0
+			order.begin_order()
 
 	def mark_complete(self, piece_id):
 		print(f'Mark_completed {piece_id}')
@@ -57,6 +58,7 @@ class Tracker:
 		else:
 			print('Updating processed')
 			curr_order.update_processed(quantity)
+			curr_order.subtract_on_factory()
 			print('Updated')
 
 	def mark_dispatched(self, piece_id):
@@ -65,6 +67,7 @@ class Tracker:
 		curr_order.on_factory += 1
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
 		self.state.pieces[piece_id].order.order_activated()
+		curr_order.add_on_factory()
 
 	def print_tracking_info(self):
 		pass

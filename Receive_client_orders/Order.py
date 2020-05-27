@@ -174,7 +174,7 @@ class TransformOrder(Order):
 		Updates the state of the order to processed in the DB
 		"""
 		if Order._db != None:
-			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity, end_time = "NOW()")
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity, end_time = "NOW()", on_factory = 0)
 	
 	def update_processed(self, quant):
 		"""
@@ -190,7 +190,19 @@ class TransformOrder(Order):
 		if Order._db != None:
 			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, start_time = "NOW()")
 		
-
+	def add_on_factory(self):
+		"""
+		Adds a piece that is being put on the factory
+		"""
+		if Order._db != None:
+			Order._db.add_on_factory("transform_orders", self.order_number)
+	
+	def subtract_on_factory(self):
+		"""
+		Subtracts a piece that was put on the factory
+		"""
+		if Order._db != None:
+			Order._db.subtract_on_factory("transform_orders", self.order_number)
 		
 class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0, db = None, already_in_db = False):
@@ -360,18 +372,21 @@ if __name__ == "__main__":
 	ex_order = TransformOrder(order_type="Transform", order_number= 1032, max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
 	ex_oee = UnloadOrder(order_type="Unload", order_number= 12, piece_type = 1, destination = 3, quantity= 10)
 
-	ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 500, before_type=3, after_type = 6, quantity= 10)
-	time.sleep(5)
-
 	ex_order.begin_order()
 	ex_oee.begin_order()
+
+	ex_order.add_on_factory()
+	ex_order.add_on_factory()
 
 	time.sleep(5)
 	print("Update processed")
 
+	ex_order.subtract_on_factory()
+
 	ex_order.update_processed(3)
 	ex_oee.update_processed(2)
 
+	
 	time.sleep(5)
 
 	print("Complete order")
