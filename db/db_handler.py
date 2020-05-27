@@ -105,6 +105,9 @@ class DB_handler:
 		Para várias condições:
 			db.update("transform_orders", where = {"maxdelay" : 300, "before_type" : 1}, before_type = 2)
 		"""
+		print("A atualizar a db em ", where, " com: ")
+		for k in kwargs.keys():
+			print(k, " = ", kwargs[k])
 		Query = "UPDATE factory." + table + " SET "
 		colnames = self._get_columns(table)
 		values = []
