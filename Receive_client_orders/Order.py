@@ -132,12 +132,12 @@ class TransformOrder(Order):
 								produced = processed, on_factory = on_factory, state = state)
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
-	def __del__(self):
-		pass
-		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
-		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
-		if Order._db != None:
-			Order._db.update(table = "transform_orders", where = {"order_id": self.order_number}, curr_state = "processed")
+	#def __del__(self):
+	#	pass
+	#	# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
+	#	# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
+	#	if Order._db != None:
+	#		Order._db.update(table = "transform_orders", where = {"order_id": self.order_number}, curr_state = "processed")
 
 
 	def get(self, attribute):
@@ -174,7 +174,7 @@ class TransformOrder(Order):
 		Updates the state of the order to processed in the DB
 		"""
 		if Order._db != None:
-			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity)
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity, end_time = "NOW()")
 	
 	def update_processed(self, quant):
 		"""
@@ -183,8 +183,14 @@ class TransformOrder(Order):
 		if Order._db != None:
 			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, produced = quant)
 
-
+	def begin_order(self):
+		"""
+		Updates the start time of an order in the DB
+		"""
+		if Order._db != None:
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, start_time = "NOW()")
 		
+
 class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0, db = None, already_in_db = False):
 		"""
@@ -215,13 +221,13 @@ class UnloadOrder(Order):
 
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
-	def __del__(self):
-		# Não retirar o pass
-		pass
-		# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
-		# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
-		if Order._db != None:
-			self.order_complete()
+	#def __del__(self):
+	#	# Não retirar o pass
+	#	pass
+	#	# É preciso verificar se as peças foram de facto todas processadas antes de fazer isto, se não, mesmo ao forçar o programa, 
+	#	# ele vai correr o destructor e atualizar a base de dados como se a ordem tivesse sido terminada
+	#	if Order._db != None:
+	#		self.order_complete()
 
 	def get(self, attribute):
 		if attribute == "order_type":
@@ -253,7 +259,7 @@ class UnloadOrder(Order):
 		Updates the state of the order to processed in the DB
 		"""
 		if Order._db != None:
-			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", unloaded = self.quantity)
+			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, curr_state = "processed", unloaded = self.quantity, end_time = "NOW()")
 			Order._db.add_unloaded_pieces(self.piece_type, self.destination)
 	
 	def update_processed(self, quant):
@@ -264,8 +270,12 @@ class UnloadOrder(Order):
 			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, unloaded = quant)
 			Order._db.add_unloaded_pieces(self.piece_type, self.destination)
 
-
-
+	def begin_order(self):
+		"""
+		Updates the start time of an order in the DB
+		"""
+		if Order._db != None:
+			Order._db.update("unload_orders", where = {"order_id" : self.order_number}, start_time = "NOW()")
 
 
 class Request_StoresOrder(Order):
@@ -344,13 +354,18 @@ if __name__ == "__main__":
 	import time
 	_db = DB_handler()
 	Order.give_db(_db)
-	# ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
+	ex_order = TransformOrder(order_type="Transform", order_number= 1032, max_delay = 200, before_type= 1, after_type = 3, quantity= 10)
 	ex_oee = UnloadOrder(order_type="Unload", order_number= 12, piece_type = 1, destination = 3, quantity= 10)
 
 	ex_order = TransformOrder(order_type="Transform", order_number= 1032,max_delay = 500, before_type=3, after_type = 6, quantity= 10)
 	time.sleep(5)
 
+	ex_order.begin_order()
+	ex_oee.begin_order()
+
+	time.sleep(5)
 	print("Update processed")
+
 	ex_order.update_processed(3)
 	ex_oee.update_processed(2)
 
