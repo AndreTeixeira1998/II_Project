@@ -267,7 +267,7 @@ async def opc_client_run(optimizer, loop):
 		m_steps += await ma_3.get_children() + await mb_3.get_children() + await mc_3.get_children()
 
 		m_vars = []
-		tempo_as_GVL = True
+		tempo_as_GVL = False
 		for step in m_steps:
 			# Para as estatisticas das máquinas
 			if not tempo_as_GVL:

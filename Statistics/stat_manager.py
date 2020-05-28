@@ -16,7 +16,7 @@ class StatMan:
 		self._columns_machines = columns_machines
 		self._columns_unload = columns_unload
 
-		self.tempo_as_GVL = True
+		self.tempo_as_GVL = False
 		if self.tempo_as_GVL:
 			self._node_id = "|var|CODESYS Control Win V3 x64.Application."
 		else:	
