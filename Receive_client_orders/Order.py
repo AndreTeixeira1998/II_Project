@@ -190,19 +190,12 @@ class TransformOrder(Order):
 		if Order._db != None:
 			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, start_time = "NOW()")
 		
-	def add_on_factory(self):
+	def update_on_factory(self):
 		"""
 		Adds a piece that is being put on the factory
 		"""
 		if Order._db != None:
-			Order._db.add_on_factory("transform_orders", self.order_number)
-	
-	def subtract_on_factory(self):
-		"""
-		Subtracts a piece that was put on the factory
-		"""
-		if Order._db != None:
-			Order._db.subtract_on_factory("transform_orders", self.order_number)
+			Order._db.update_on_factory("transform_orders", self.order_number, self.on_factory)
 		
 class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0, db = None, already_in_db = False):

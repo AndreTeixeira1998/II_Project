@@ -308,11 +308,11 @@ class DB_handler:
 		except(Exception, psycopg2.Error) as error:
 			print("Error while connecting to PostgreSQL", error)
 
-	def add_on_factory(self, table, id):
+	def update_on_factory(self, table, id, quantity):
 		"""
 		Adds a piece that was placed on the factory in the db
 		"""
-		Query = "UPDATE factory." + table + " SET on_factory = on_factory + 1 WHERE order_id = " + str(id) 
+		Query = "UPDATE factory." + table + " SET on_factory = " + str(quantity) + " WHERE order_id = " + str(id) 
 		try:
 			self._cursor.execute(Query)
 			self._connection.commit()
@@ -396,5 +396,7 @@ if __name__ == "__main__":
 	# 	data.append({"Total time": 1, "P1" : 2, "P2" : 3, "P3" : 4, "P4" : 5, "P5" : 6, "P6" : 7, "P7" : 8, "P8" : 9, "P9" : 10, "Total" : 11})
 	# db.insert_machine_stats(data)
 
-	db.subtract_on_factory("transform_orders", 1032)
+	# db.subtract_on_factory("transform_orders", 1032)
 	
+	hello = db.select("unloading_zones")
+	print(hello)

@@ -59,7 +59,7 @@ class Tracker:
 			#print('Updating processed')
 			curr_order.update_processed(quantity)
 			if curr_order.order_type=='Transform':
-				curr_order.subtract_on_factory()
+				curr_order.update_on_factory()
 			#print('Updated')
 
 	def mark_dispatched(self, piece_id):
@@ -69,7 +69,7 @@ class Tracker:
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
 		self.state.pieces[piece_id].order.order_activated()
 		if curr_order.order_type=='Transform':
-			curr_order.add_on_factory()
+			curr_order.update_on_factory()
 
 	def print_tracking_info(self):
 		pass

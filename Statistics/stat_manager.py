@@ -16,7 +16,7 @@ class StatMan:
 		self._columns_machines = columns_machines
 		self._columns_unload = columns_unload
 
-		self.tempo_as_GVL = False
+		self.tempo_as_GVL = True
 		if self.tempo_as_GVL:
 			self._node_id = "|var|CODESYS Control Win V3 x64.Application."
 		else:	
@@ -34,7 +34,7 @@ class StatMan:
 		# https://stackoverflow.com/questions/5259882/subtract-two-times-in-python
 
 		#	Informação para as transformation orders
-		data = self._db.select("transform_orders", print_table = print_table)
+		data = self._db.select("transform_orders", print_table = print_table, order_by = "order_id")
 		for item in data:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
@@ -51,7 +51,7 @@ class StatMan:
 			filtered_data.append([item[0], "Transform", item[5], item[9], item[10], item[8]-item[9]-item[10], time_rec, time_beg, time_end, slack])
 
 		#	Informação para as unload orders
-		data = self._db.select("unload_orders", print_table = print_table)
+		data = self._db.select("unload_orders", print_table = print_table, order_by = "order_id")
 		for item in data:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
@@ -68,7 +68,7 @@ class StatMan:
 			filtered_data.append([item[0], "Unload", item[5], item[9], "-", item[8]-item[9], time_rec, time_beg, time_end, slack])
 
 		#	Informação para as Request Stores
-		data = self._db.select("stock_orders", print_table = print_table)
+		data = self._db.select("stock_orders", print_table = print_table, order_by = "order_id")
 		for item in data:
 			time_rec = item[1].time().strftime("%H:%M:%S")
 			if item[2] != None: time_beg = item[2].time().strftime("%H:%M:%S")
