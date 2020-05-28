@@ -16,7 +16,7 @@ class StatMan:
 		self._columns_machines = columns_machines
 		self._columns_unload = columns_unload
 
-		self.tempo_as_GVL = True
+		self.tempo_as_GVL = False
 		if self.tempo_as_GVL:
 			self._node_id = "|var|CODESYS Control Win V3 x64.Application."
 		else:	
@@ -102,10 +102,8 @@ class StatMan:
 								if self._translator[columns] == "tempo":
 									v.append(self._optimizer.factory_state[self._node_id + "GVL.tempo_" + id])
 									v[-1] = int(v[-1]/1000)
-									v.append(123)
 								else:	
 									v.append(self._optimizer.factory_state[self._node_id + "tapetes." + self._machine_node[id] + "." + self._translator[columns]])
-									v.append(69)
 							else:
 								v.append(self._optimizer.factory_state[self._node_id + self._machine_node[id] + "." + self._translator[columns]])
 								if self._translator[columns] == "tempo":
