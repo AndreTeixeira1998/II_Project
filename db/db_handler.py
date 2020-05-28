@@ -312,7 +312,17 @@ class DB_handler:
 		"""
 		Adds a piece that was placed on the factory in the db
 		"""
-		Query = "UPDATE factory." + table + " SET on_factory = " + str(quantity) + " WHERE order_id = " + str(id) 
+		Query = "UPDATE factory." + table + " SET on_factory = " + str(quantity) + ", pending = (batch_size - produced - " + str(quantity) + ")  WHERE order_id = " + str(id) 
+		try:
+			self._cursor.execute(Query)
+			self._connection.commit()
+		except(Exception, psycopg2.Error) as error:
+			print("Error while connecting to PostgreSQL", error)
+
+
+
+	def update_processed_transform(self, quant, id):
+		Query = "UPDATE factory.transform_orders SET produced = " + str(quant) + ", pending = (batch_size - on_factory - " + str(quant) + ")  WHERE order_id = " + str(id)
 		try:
 			self._cursor.execute(Query)
 			self._connection.commit()

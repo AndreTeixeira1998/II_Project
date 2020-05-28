@@ -48,7 +48,7 @@ class StatMan:
 				time_end = item[3].time().strftime("%H:%M:%S")
 				slack = item[4] - int(slack.total_seconds())
 
-			filtered_data.append([item[0], "Transform", item[5], item[9], item[10], item[8]-item[9]-item[10], time_rec, time_beg, time_end, slack])
+			filtered_data.append([item[0], "Transform", item[5], item[9], item[10], item[11], time_rec, time_beg, time_end, slack])
 
 		#	Informação para as unload orders
 		data = self._db.select("unload_orders", print_table = print_table, order_by = "order_id")
