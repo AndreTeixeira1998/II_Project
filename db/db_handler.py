@@ -3,6 +3,7 @@ import threading
 
 class DB_handler:
 	def __init__(self, host = "127.0.0.1", port = "5432"):
+		self.mutex = threading.Lock()
 		try:
 			self._connection = psycopg2.connect(user = "ii",
 									password = "iisuckz",
@@ -50,7 +51,7 @@ class DB_handler:
 					self._cursor.execute(Query,tuple(str(i)))
 					self._connection.commit()
 		
-			self.mutex = threading.Lock()
+			
 
 		except(Exception, psycopg2.Error) as error:
 			print("Error while connecting to PostgreSQL", error) 
