@@ -218,7 +218,7 @@ if __name__ == "__main__":
 	db = DB_handler()
 
 	#fuck persistencia
-	#db.delete_all_content(['unload_orders', 'transform_orders'])
+	db.delete_all_content(['unload_orders', 'transform_orders', 'stock_orders'])
 
 	optimizer = HorOptimizer()
 	win = GUI_V2(db,optimizer)

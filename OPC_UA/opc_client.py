@@ -130,14 +130,14 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 			if optimizer.pusher.count_3 >= 3:
 				cond_pusher3.clear()
 
-	elif optimizer.dispatch_queue:
+	if optimizer.dispatch_queue:
 		piece = optimizer.dispatch_queue[0]
 		first_type = optimizer.dispatch_queue[0].type
 		if cond.is_set():
 			if optimizer.stock[first_type] <= 0:
 				optimizer.reset()
 			else:
-				print('TA FIXE MANO')
+				#print('TA FIXE MANO')
 				piece = optimizer.dispatch_queue.popleft()
 				#print("id: ", piece.id, " path: ", piece.path)
 				# await block_pieces.wait()
@@ -145,8 +145,9 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 					and (piece.id not in optimizer.tracker.pieces_complete):
 					await sender.send_path(piece, var_write)
 					print(f"Dispatching piece no {piece.id}: ")
+					#print([(m.id,m.waiting_time) for m in optimizer.state.machines.values()])
 					optimizer.tracker.mark_dispatched(piece.id)
-					#optimizer.print_machine_schedule()
+					optimizer.print_machine_schedule()
 					cond.clear()
 				#await asyncio.sleep(1)
 
@@ -209,7 +210,7 @@ async def get_stocks(optimizer, stock_nodes):
 	return optimizer.stock
 
 async def opc_client_run(optimizer, loop):
-	url = 'opc.tcp://172.29.0.73:4840/'
+	url = 'opc.tcp://172.29.0.38:4840/'
 	print('Connecting to PLC')
 	async with Client(url=url) as client:
 		print('Reading Node information')

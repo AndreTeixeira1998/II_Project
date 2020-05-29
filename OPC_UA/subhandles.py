@@ -130,10 +130,7 @@ class OptimizerSubHandler(SubHandler):
 		for machine in self.encoding.keys():
 			if machine in str(node.nodeid.Identifier):
 				if "op" in str(node.nodeid.Identifier) and val is True:
-					# print(f"pop an operation on {self.encoding[machine]}")
-					op = self.optimizer.state.machines[self.encoding[machine]].op_list.popleft()
-					#self.optimizer.print_machine_schedule()
-					#print(node.nodeid)
+					self.optimizer.state.machines[self.encoding[machine]].remove_op()
 					self.optimizer.state.machines[self.encoding[machine]].op_list[0].update_next_tool()
 
 				elif "Init" in str(node.nodeid.Identifier) and val is True:

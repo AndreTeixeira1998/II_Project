@@ -45,6 +45,17 @@ class Machine:
 	def add_op(self, op):
 		self.op_list.append(op)
 
+	def remove_op(self):
+		removed_op = self.op_list.popleft()
+		if self.op_list:
+			for op in self.op_list:
+				#print(f'ANTES: {op}')
+				op.eta -= removed_op.eta
+				#print(f'Depois: {op}')
+			self.waiting_time -= removed_op.eta
+		else:
+			self.waiting_time = 0
+
 
 class Transform:
 	def __init__(self, machine: Machine, tool, duration):
