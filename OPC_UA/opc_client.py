@@ -148,7 +148,7 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 					optimizer.tracker.mark_dispatched(piece.id)
 					#optimizer.print_machine_schedule()
 					cond.clear()
-				await asyncio.sleep(1)
+				#await asyncio.sleep(1)
 
 
 async def swap_tools(tool_nodes, optimizer):
@@ -170,41 +170,21 @@ async def read(client, vars, handler):
 	await sub.subscribe_data_change(vars)
 
 
-async def charge_P1(client, cond_p1, charge_var):
-	# print('#debug Charge P1')
+async def charge_P1(client, cond_p1, var_load_tipo_atual, var_load_path):
 	sender = OnePiece()
 	dest_path = [39, 41, 42, 43, 44, 45, 46, 38, 31, 26, 19, 14, 7, 2]
-	var_load_path = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].path")
-	var_load_tipo_atual = client.get_node(
-		"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].tipo_atual")
-	# var_load_id
-
-	# if (await charge_var.get_value()):
-	if cond_p1:
-		# await cond_p1.wait()
-		# print("OOOOOOOOOOOOOOOOOOOOOOOOOOOO", await charge_var.get_value())
-		# await self.write_int16(var_write["id"], piece.id)  # set node value using implicit data type
+	if cond_p1.is_set():
 		await sender.write_int16(var_load_tipo_atual, 1)
-		await sender.write_array_int16(var_load_path, dest_path,
-									   path_length)  # set node value using implicit data type
-
+		await sender.write_array_int16(var_load_path, dest_path, path_length)
 		cond_p1.clear()
 
 
-async def charge_P2(client, cond_p2, charge_var):
-	# print('#debug Charge P2')
+async def charge_P2(client, cond_p2, var_load_tipo_atual, var_load_path):
 	sender = OnePiece()
 	dest_path = [46, 38, 31, 26, 19, 14, 7, 2]
-	var_load_path = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].path")
-	var_load_tipo_atual = client.get_node(
-		"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].tipo_atual")
-
-
-	if cond_p2:
+	if cond_p2.is_set():
 		await sender.write_int16(var_load_tipo_atual, 2)
-		await sender.write_array_int16(var_load_path, dest_path,
-									   path_length)  # set node value using implicit data type
-		# await asyncio.sleep(2)
+		await sender.write_array_int16(var_load_path, dest_path, path_length)
 		cond_p2.clear()
 
 
@@ -229,7 +209,7 @@ async def get_stocks(optimizer, stock_nodes):
 	return optimizer.stock
 
 async def opc_client_run(optimizer, loop):
-	url = 'opc.tcp://localhost:4840/'
+	url = 'opc.tcp://172.29.0.73:4840/'
 	print('Connecting to PLC')
 	async with Client(url=url) as client:
 		print('Reading Node information')
@@ -307,7 +287,7 @@ async def opc_client_run(optimizer, loop):
 		var_despacha_1_para_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x")
 		m_vars.append(var_despacha_1_para_3)
 
-		vars_P1_charge = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.c7t7a_i.sensor")
+		vars_P1_charge = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor")
 		vars_P2_charge = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor")
 		m_vars.append(vars_P1_charge)
 		m_vars.append(vars_P2_charge)
@@ -335,22 +315,36 @@ async def opc_client_run(optimizer, loop):
 		cond_pusher_2.set()
 		cond_pusher_3.set()
 
+		cond_p1 = asyncio.Event()
+		cond_p2 = asyncio.Event()
 		handler = OptimizerSubHandler(optimizer, cond, cond_p1, cond_p2, cond_pusher_1, cond_pusher_2, cond_pusher_3, _logger)
+
+		#Charge 1
+		var_load_path_1 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].path")
+		var_load_tipo_atual_1 = client.get_node(
+			"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[40].tipo_atual")
+
+		#Charge 2
+		var_load_path_2 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].path")
+		var_load_tipo_atual_2 = client.get_node(
+			"ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[47].tipo_atual")
 
 		print("MES-PLC OpcUA Connection established")
 
-		await read(client, m_vars, handler)
 
+		await read(client, m_vars, handler)
+		#await get_stocks(optimizer, stock_nodes)
 		# loop = asyncio.get_event_loop()
 		while True:
 			await asyncio.gather(
 				write(var_write, optimizer, cond, cond_pusher_1, cond_pusher_2, cond_pusher_3, flag, reverse_flag),
-				charge_P1(client, cond_p1, vars_P1_charge),
-				charge_P2(client, cond_p2, vars_P2_charge),
+				charge_P1(client, cond_p1, var_load_tipo_atual_1, var_load_path_1),
+				charge_P2(client, cond_p2, var_load_tipo_atual_2, var_load_path_2),
 				swap_tools(tool_nodes, optimizer),
 				#unload(optimizer, cond_pusher_1)
 			)
 			await get_stocks(optimizer, stock_nodes)
+
 
 
 if __name__ == '__main__':

@@ -156,8 +156,8 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 
 
 		if optimizer.is_reversed:
-			print('ma',optimizer.state.machines['Ma_3'].op_list)
-			print('mc',optimizer.state.machines['Mc_3'].op_list)
+			#print('ma',optimizer.state.machines['Ma_3'].op_list)
+			#print('mc',optimizer.state.machines['Mc_3'].op_list)
 			if not optimizer.state.machines['Ma_3'].op_list \
 					and not optimizer.state.machines['Mc_3'].op_list:
 				optimizer.reset()
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 	db = DB_handler()
 
 	#fuck persistencia
-	db.delete_all_content(['unload_orders', 'transform_orders'])
+	#db.delete_all_content(['unload_orders', 'transform_orders'])
 
 	optimizer = HorOptimizer()
 	win = GUI_V2(db,optimizer)

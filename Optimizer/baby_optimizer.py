@@ -27,7 +27,7 @@ class Tracker:
 			order.begin_order()
 
 	def mark_complete(self, piece_id):
-		print(f'Mark_completed {piece_id}')
+		#print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		curr_order.on_factory -= 1
 		curr_order.processed += 1
@@ -38,9 +38,9 @@ class Tracker:
 		if quantity == curr_order.get("quantity"):
 			curr_order.order_complete()
 		else:
-			print('Updating processed')
+		#	print('Updating processed')
 			curr_order.update_processed(quantity)
-			print('Updated')
+		#	print('Updated')
 		self.check_cell3_clearance()
 		self.check_mb3_clearance()
 
@@ -63,7 +63,7 @@ class Tracker:
 			#print('Updated')
 
 	def mark_dispatched(self, piece_id):
-		print(f'Mark_dispatched {piece_id} -> order {self.state.pieces[piece_id].order.order_number}')
+		#print(f'Mark_dispatched {piece_id} -> order {self.state.pieces[piece_id].order.order_number}')
 		curr_order = self.state.pieces[piece_id].order
 		curr_order.on_factory += 1
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
@@ -88,14 +88,14 @@ class Tracker:
 				if piece.order.order_type == 'Transform':
 					for m in piece.machines:
 						if m == 'Ma_3' or m == 'Mb_3':
-							print('CELL 3 is busy')
+							#print('CELL 3 is busy')
 							cell3_is_clear.clear()
 							return False
-			print('CELL 3 is clear')
+			#print('CELL 3 is clear')
 			cell3_is_clear.set()
 			return True
 		else:
-			print('No pieces on factory floor')
+			#print('No pieces on factory floor')
 			cell3_is_clear.set()
 			return True
 
@@ -106,14 +106,14 @@ class Tracker:
 				if piece.order.order_type == 'Transform':
 					for m in piece.machines:
 						if m == 'Mb_3':
-							print('Machine B3 is busy')
+							#print('Machine B3 is busy')
 							mb3_is_clear.clear()
 							return False
-			print('machine B3 is clear')
+			#print('machine B3 is clear')
 			mb3_is_clear.set()
 			return True
 		else:
-			print('No pieces on factory floor')
+			#print('No pieces on factory floor')
 			mb3_is_clear.set()
 			return True
 
@@ -441,7 +441,7 @@ class HorOptimizer(Optimizer):
 				self.state.pieces_optimized += 1
 
 		print('Optimized:')
-		self.print_machine_schedule()
+		#self.print_machine_schedule()
 		#self.print_pusher_queues()
 		return self.state
 
@@ -471,7 +471,7 @@ class HorOptimizer(Optimizer):
 		cond_pusher3.set()
 
 		self.dispatch_queue.clear()
-		self.print_machine_schedule()
+		#self.print_machine_schedule()
 		self.print_pusher_queues()
 		lock.release()
 		optimization_lock.release()

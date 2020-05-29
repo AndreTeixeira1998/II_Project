@@ -4,7 +4,7 @@ from threading import Thread
 from queue import Queue
 	
 
-host = "127.0.0.1"
+host = "172.29.0.248"
 port = 54321
 buf = 2048
 addr = (host,port)

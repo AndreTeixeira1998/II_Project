@@ -57,8 +57,6 @@ class OptimizerSubHandler(SubHandler):
 		"""
 
 		self.optimizer.factory_state[str(node.nodeid.Identifier)] = val
-		# print(self.optimizer.factory_state)
-
 		self._logger.debug("Update {}:\t {}".format(node, val))
 		if val is True:
 			# só quero ver qnd ficam true depois pode-se tirar isto
