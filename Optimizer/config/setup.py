@@ -178,6 +178,11 @@ def optimizer_init(optimizer):
 	optimizer.reverse_recipes['4->7'].append([Transform(optimizer.state.machines[f'Mc_3'], 'T2', 10),
 							  			Transform(optimizer.state.machines[f'Ma_3'], 'T2', 30)])
 
+	optimizer.reverse_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_3'], 'T2', 30)])
+
+
+
+
 
 	print('Reverse custom recipes loaded')
 

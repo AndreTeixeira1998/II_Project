@@ -4,6 +4,8 @@ import asyncio
 lock = threading.Lock()
 optimization_lock = threading.Lock()
 mega_mutex = threading.Lock()
+mutex_cursor = threading.Lock()
+
 flag = threading.Event()
 reverse_flag = threading.Event()
 
