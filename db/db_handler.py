@@ -1,7 +1,7 @@
 import psycopg2
 
 class DB_handler:
-	def __init__(self, host = "192.168.99.100", port = "5432"):
+	def __init__(self, host = "172.29.0.38", port = "5432"):
 		try:
 			self._connection = psycopg2.connect(user = "ii",
 									password = "iisuckz",
