@@ -181,8 +181,9 @@ class TransformOrder(Order):
 		Updates the number of pieces processed in the DB
 		"""
 		if Order._db != None:
-			Order._db.update_processed_transform(self, quant, self.order_number) #update("transform_orders", where = {"order_id" : self.order_number}, produced = quant)
-
+			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, produced = quant, pending = self.quantity - quant - self.on_factory)
+            
+            
 	def begin_order(self):
 		"""
 		Updates the start time of an order in the DB
