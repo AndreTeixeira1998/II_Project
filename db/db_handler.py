@@ -1,7 +1,8 @@
 import psycopg2
+import threading
 
 class DB_handler:
-	def __init__(self, host = "172.29.0.38", port = "5432"):
+	def __init__(self, host = "127.0.0.1", port = "5432"):
 		try:
 			self._connection = psycopg2.connect(user = "ii",
 									password = "iisuckz",
@@ -49,6 +50,8 @@ class DB_handler:
 					self._cursor.execute(Query,tuple(str(i)))
 					self._connection.commit()
 		
+			self.mutex = threading.Lock()
+
 		except(Exception, psycopg2.Error) as error:
 			print("Error while connecting to PostgreSQL", error) 
 
@@ -60,8 +63,11 @@ class DB_handler:
 			colnames = self._column_dict[table]
 		else:
 			Query = "SELECT * FROM factory." + table + " LIMIT 0"
-			self._cursor.execute(Query)
-			colnames = [names[0] for names in self._cursor.description]
+			############################# Abre mutex
+			with self.mutex:
+				self._cursor.execute(Query)
+				colnames = [names[0] for names in self._cursor.description]
+			############################# Fecha mutex
 			self._column_dict[table] = colnames
 		return colnames
 
@@ -72,6 +78,36 @@ class DB_handler:
 			self._connection.close()
 			print("Database connection closed")
 	
+	def select_query(self, query, tup = None):
+		############################# Abre mutex
+		with self.mutex: 
+			try:
+				if tup == None:
+					self._cursor.execute(query)
+					data = self._cursor.fetchall()
+				else:
+					self._cursor.execute(query, tuple(tup))
+					data = self._cursor.fetchall()
+			except(Exception, psycopg2.Error) as error:
+					print("Error while connecting to PostgreSQL", error)
+
+		############################# Fecha mutex
+		return data
+
+	def insert_update_query(self, query, tup = None):
+		############################# Abre mutex
+		with self.mutex:
+			try:
+				if tup == None:
+					self._cursor.execute(query)
+					self._connection.commit()
+				else:
+					self._cursor.execute(query, tuple(tup))
+					self._connection.commit()
+			except(Exception, psycopg2.Error) as error:
+					print("Error while connecting to PostgreSQL", error)
+		############################# Fecha mutex
+
 
 
 	def delete_all_content(self, tables_to_delete = None):
@@ -107,12 +143,8 @@ class DB_handler:
 		   Query = Query + "%s,"
 		Query = Query[:-1] + ")"
 
-		try:
-			self._cursor.execute(Query,tuple(values))
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
-
+		self.insert_update_query(Query, values)
+		
 	def update(self, table, where, **kwargs):
 		"""Faz update de valores num determinado lugar.
 		De preferência, fornecer a primary key no where, visto o contexto do trabalho.\n 
@@ -152,11 +184,7 @@ class DB_handler:
 
 		values_condition = values + condition
 
-		try:
-			self._cursor.execute(Query,tuple(values_condition))
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+		self.insert_update_query(Query, values_condition)
 
 	def select(self, table, content = "*", where = None,  order_by = "", operand = "AND", print_table = False):
 		"""Retorna dados da tabela. Está como default retirar todas as colunas. É possível selecionar vários dados especificos com o where.\n
@@ -191,10 +219,8 @@ class DB_handler:
 		if where == None:
 			if order_by in colnames:
 				Query += " ORDER BY " + order_by
-			try:
-				self._cursor.execute(Query)
-			except(Exception, psycopg2.Error) as error:
-				print("Error while connecting to PostgreSQL", error)
+			data = self.select_query(Query)
+
 		else:
 			condition = []
 			Query += " WHERE "
@@ -211,12 +237,8 @@ class DB_handler:
 			if order_by in colnames:
 				Query += " ORDER BY " + order_by
 
-			try:
-				self._cursor.execute(Query,tuple(condition))
-			except(Exception, psycopg2.Error) as error:
-				print("Error while connecting to PostgreSQL", error)
-
-		data = self._cursor.fetchall()
+			data = self.select_query(Query, condition)
+			
 		if print_table ==True:
 			print(first_line)
 			for row in data:
@@ -246,14 +268,7 @@ class DB_handler:
 			Query += " WHERE machine_type = %s AND transformation_cell = %s"
 			values.append(machine_id[0])
 			values.append(machine_id[1])
-			try:
-				self._cursor.execute(Query,tuple(values))
-			except(Exception, psycopg2.Error) as error:
-				print("Error while connecting to PostgreSQL", error)
-		try:
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-				print("Error while connecting to PostgreSQL", error)
+			self.insert_update_query(Query, values)
 
 
 
@@ -273,11 +288,7 @@ class DB_handler:
 
 
 		Query = "SELECT (amount) FROM factory.stored_pieces ORDER BY piece_type"
-		try:
-			self._cursor.execute(Query)
-		except(Exception, psycopg2.Error) as error:
-				print("Error while connecting to PostgreSQL", error)
-		counted = self._cursor.fetchall()
+		counted = self.select_query(Query)
 		counted = [i[0] for i in counted]
 		return counted
 
@@ -287,11 +298,7 @@ class DB_handler:
 		Adds one piece to the unloaded db in the desired destination
 		"""
 		Query = "UPDATE factory.unloading_zones SET P" + str(piece_type) + " = P" + str(piece_type) + " + 1 WHERE area_id = %s"
-		try:
-			self._cursor.execute(Query,tuple(str(destination)))
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+		self.insert_update_query(Query, str(destination))
 
 	def add_stored_pieces(self, piece_type, amount = 1):
 		"""
@@ -302,32 +309,21 @@ class DB_handler:
 		"""
 
 		Query = "UPDATE factory.stored_pieces SET amount = amount + " + str(amount) + " WHERE piece_type = %s"
-		try:
-			self._cursor.execute(Query,tuple(str(piece_type)))
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+		self.insert_update_query(Query,str(piece_type))
+
 
 	def update_on_factory(self, table, id, quantity):
 		"""
 		Adds a piece that was placed on the factory in the db
 		"""
 		Query = "UPDATE factory." + table + " SET on_factory = " + str(quantity) + ", pending = (batch_size - produced - " + str(quantity) + ")  WHERE order_id = " + str(id) 
-		try:
-			self._cursor.execute(Query)
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+		self.insert_update_query(Query)
 
 
 
 	def update_processed_transform(self, quant, id):
 		Query = "UPDATE factory.transform_orders SET produced = " + str(quant) + ", pending = (batch_size - on_factory - " + str(quant) + ")  WHERE order_id = " + str(id)
-		try:
-			self._cursor.execute(Query)
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+		self.insert_update_query(Query)
 
 	def subtract_stored_pieces(self, piece_type, amount = 1):
 		"""
@@ -346,22 +342,17 @@ class DB_handler:
 			return
 		else:
 			Query = "UPDATE factory.stored_pieces SET amount = amount - "+ str(amount) + " WHERE piece_type = %s"
-			try:
-				self._cursor.execute(Query,tuple(str(piece_type)))
-				self._connection.commit()
-			except(Exception, psycopg2.Error) as error:
-				print("Error while connecting to PostgreSQL", error)
+			self.insert_update_query(Query,str(piece_type))
+
 
 	def subtract_on_factory(self, table, id):
 		"""
 		Adds a piece that was placed on the factory in the db
 		"""
 		Query = "UPDATE factory." + table + " SET on_factory = on_factory - 1 WHERE order_id = " + str(id)
-		try:
-			self._cursor.execute(Query)
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+
+		self.insert_update_query(Query)
+
 
 	def update_stored_pieces(self, piece_type, amount):
 		"""
@@ -370,11 +361,9 @@ class DB_handler:
 		"""
 		Query = "UPDATE factory.stored_pieces SET amount = %s WHERE piece_type = %s"
 		values_condition = [str(amount), str(piece_type)]
-		try:
-			self._cursor.execute(Query,tuple(values_condition))
-			self._connection.commit()
-		except(Exception, psycopg2.Error) as error:
-			print("Error while connecting to PostgreSQL", error)
+
+		self.insert_update_query(Query,values_condition)
+
 
 
 
