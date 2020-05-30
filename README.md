@@ -26,7 +26,7 @@ In order to install docker on windows please download the latest docker toolbox 
 
 ### Remote access the database 
 
-1.	Oracle VM VirtualBox should be installed by default after installing docker. Open the application
+1.	Oracle VM VirtualBox should be installed by default after installing docker. Run the application
 2.	Open the settigns and navigate to the Network tab
 3.	Open Port Forwading under the Advanced options
 4.	Create 2 new rules like the following  
