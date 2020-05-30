@@ -460,9 +460,6 @@ class HorOptimizer(Optimizer):
 				print(f'MAKING {m.id} available')
 				m.make_available()
 			for op in removed_ops:
-				print(removed_ops)
-				import os
-				os._exit()
 				m.waiting_time -= op.transform.duration
 			m.op_list = collections.deque(new_oplist)
 
