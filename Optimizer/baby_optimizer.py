@@ -27,7 +27,7 @@ class Tracker:
 			order.begin_order()
 
 	def mark_complete(self, piece_id):
-		#print(f'Mark_completed {piece_id}')
+		print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		curr_order.on_factory -= 1
 		curr_order.processed += 1

@@ -148,7 +148,7 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 					print(f"Dispatching piece no {piece.id}: ")
 					#print([(m.id,m.waiting_time) for m in optimizer.state.machines.values()])
 					optimizer.tracker.mark_dispatched(piece.id)
-					optimizer.print_machine_schedule()
+					#optimizer.print_machine_schedule()
 					cond.clear()
 				#await asyncio.sleep(1)
 
