@@ -38,9 +38,9 @@ class Tracker:
 		if quantity == curr_order.get("quantity"):
 			curr_order.order_complete()
 		else:
-		#	print('Updating processed')
+			print('Updating processed')
 			curr_order.update_processed(quantity)
-		#	print('Updated')
+			print('Updated')
 		print("IISUCKZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
 		self.check_cell3_clearance()
 		self.check_mb3_clearance()

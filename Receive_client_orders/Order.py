@@ -199,7 +199,7 @@ class TransformOrder(Order):
 		Updates the number of pieces processed in the DB
 		"""
 		if Order._db != None:
-			Order._db.update_processed(quant, self.order_number, self.quantity, self.on_factory)
+			Order._db.update_processed_transform(quant, self.order_number, self.quantity, self.on_factory)
 
 		
 class UnloadOrder(Order):
