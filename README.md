@@ -1,12 +1,30 @@
 # II Project
 
-This project is based on python and codesys, and runs on Windows 10.
+This project is based on python, codesys and postgresql, and runs on Windows 10.
+
+After installing python3.8, create a virtual environment using the commands  
+`python -m virtualenv venv`
+`.\venv\Scripts\activate`
+
+**Note**: Powershell should allow to run scripts to perform the previous commands. If that happens, follow this [link](https://stackoverflow.com/questions/4037939/powershell-says-execution-of-scripts-is-disabled-on-this-system)  
+
+After setting up the virtual environment run the file requirements.txt  
+`python -m pip install -r requirements.txt`
 
 ## Setting up the MES
 
-It is possible to change the MES to interact with the PLC, the database and the UDP as long as they all share the same network. Under the file directory, the `config.json` should be changed with the IP of the machine running the respective service.
+It is possible to change the MES to interact with the PLC, the database and the UDP as long as they all share the same network. Under the file directory, the `config.json` should be changed with the IP of the machine running the respective service.  
 
 **Note**: All the arguments should be written surrounded by double quotation marks ("")
+
+## Running the program
+
+Run the following command in the virtual environment's terminal on the source directory:  
+`python .\Main.py`
+
+## Terminate the program
+
+Select the terminal running the MES and press `Ctrl`+`Fn`+`b` or `Ctrl`+`Break`
 
 ## Configuring the database
 
@@ -32,9 +50,28 @@ In order to install docker on windows please download the latest docker toolbox 
 2.	Open the settigns and navigate to the Network tab
 3.	Open Port Forwading under the Advanced options
 4.	Create 2 new rules like the following  
-		`Name: Rule 1, Host Port: 5050, Guest Port: 5050`  
-		`Name: Rule 2, Host Port: 5432, Guest Port: 5432`
+		`Name: pqadmin, Host Port: 5050, Guest Port: 5050`  
+		`Name: postgres, Host Port: 5432, Guest Port: 5432`
 
+### Accessing the database through PgAdmin
+
+You can now access the PgAdmin webpage by going to your prefered browser and entering the following adress:  
+
+`<YOUR-DOCKER-MACHINE-IP>:5050`  
+
+Where your `<YOUR-DOCKER-MACHINE-IP>` is usually by default `192.168.99.100` if not, you can check it by running `docker-machine ip` on the shell.
+
+## Default Credentials
+
+#### pgadmin
+**User:** ii@project.com  
+**Password:** ii_project  
+
+***
+
+#### database  
+**User:** ii  
+**Password:** ii_project
 
 ### Removing the database
 
