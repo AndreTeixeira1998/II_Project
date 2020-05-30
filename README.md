@@ -1,7 +1,5 @@
-# II_Project
+# Projeto de II
 
-This is the greatest II project of all time. Mark my words.
+## Configuração da base de dados
 
-- said no one ever
-
-Sun Tzu in II MEME WARS 101
+A base de dados corre em docker. Para a instalação do docker descarregue a ultima versão do docker toolbox.exe no (repositório oficial)[https://github.com/docker/toolbox/releases]
