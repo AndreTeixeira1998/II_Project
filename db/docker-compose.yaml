@@ -8,8 +8,8 @@ services:
     container_name: pgadmin_container
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-banana@ananas.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-ii@project.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-ii_project}
     volumes:
        - pgadmin:/root/.pgadmin
        - ./pgadmin_config:/cfg
@@ -23,7 +23,7 @@ services:
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ii}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iisuckz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ii_project}
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
