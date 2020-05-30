@@ -3,6 +3,8 @@ from threading import Thread
 from queue import Queue
 import sys
 import time
+import json
+
 
 from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
@@ -207,14 +209,18 @@ def update_dispatch(optimizer):
 		time.sleep(0.1)
 
   
-def run(optimizer):
+def run(optimizer, host, port):
 	loop = asyncio.new_event_loop()
-	loop.run_until_complete(opc_client_run(optimizer, loop))
+	loop.run_until_complete(opc_client_run(optimizer, loop, host, port))
 	loop.run_forever()
 	loop.close()
+		
 
 if __name__ == "__main__":
-	db = DB_handler()
+	with open("config.json", "r") as config: 
+		configuations = json.load(config)
+
+	db = DB_handler(configuations["DB"]["Host"], configuations["DB"]["Port"])
 
 	#Remover persistencia
 	db.delete_all_content(['unload_orders', 'transform_orders', 'stock_orders', 'pieces'])
@@ -233,9 +239,9 @@ if __name__ == "__main__":
 	print('ordens pendentes transform + unload:' + str(len(pending_orders)))
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
-	t_order_rec = Thread(target = order_receive, args = (q_udp, True))
+	t_order_rec = Thread(target = order_receive, args = (q_udp, False, configuations["UDP"]["Host"], configuations["UDP"]["Port"], ))
 	t_order_rec.name = "Thread_client_receive"
-	t_opc_run = Thread(target = run, args = (optimizer, ))
+	t_opc_run = Thread(target = run, args = (optimizer, configuations["PLC"]["Host"], configuations["PLC"]["Port"], ))
 	t_opc_run.name = "Thread_opc_run"
 
 	#t_compute_orders = Thread(target=compute_orders, args=(optimizer, q_udp, pending_orders))

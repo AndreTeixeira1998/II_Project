@@ -210,8 +210,8 @@ async def get_stocks(optimizer, stock_nodes):
 	#print(optimizer.stock)
 	return optimizer.stock
 
-async def opc_client_run(optimizer, loop):
-	url = 'opc.tcp://172.22.129.238:4840/'
+async def opc_client_run(optimizer, loop, host = "localhost", port = "4840"):
+	url = 'opc.tcp://' + host + ':' + port
 	print('Connecting to PLC')
 	async with Client(url=url) as client:
 		print('Reading Node information')
