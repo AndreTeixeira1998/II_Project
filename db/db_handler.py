@@ -2,7 +2,7 @@ import psycopg2
 import threading
 
 class DB_handler:
-	def __init__(self, host = "127.0.0.1", port = "5432"):
+	def __init__(self, host = "172.29.0.55", port = "5432"):
 		self.mutex = threading.Lock()
 		try:
 			self._connection = psycopg2.connect(user = "ii",
@@ -211,10 +211,9 @@ class DB_handler:
 					first_line += col + "\t"
 		else:
 			for cont in content:
-				if cont in colnames:
-					Query += cont + ","
-					if print_table ==True: 
-						first_line += cont + "\t"
+				Query += cont + ","
+				if print_table ==True:
+					first_line += cont + "\t"
 			Query = Query[:-1] + " FROM factory." + table
 		
 		if where == None:
