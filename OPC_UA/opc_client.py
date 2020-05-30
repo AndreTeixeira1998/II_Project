@@ -211,7 +211,7 @@ async def get_stocks(optimizer, stock_nodes):
 	return optimizer.stock
 
 async def opc_client_run(optimizer, loop):
-	url = 'opc.tcp://172.29.0.38:4840/'
+	url = 'opc.tcp://172.29.0.61:4840/'
 	print('Connecting to PLC')
 	async with Client(url=url) as client:
 		print('Reading Node information')

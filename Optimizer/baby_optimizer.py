@@ -456,12 +456,22 @@ class HorOptimizer(Optimizer):
 		for m in self.state.machines.values():
 			new_oplist = [op for op in m.op_list if op.piece_id in self.tracker.pieces_on_transit]
 			removed_ops = [op for op in m.op_list if op.piece_id not in self.tracker.pieces_on_transit]
+			m.op_list = collections.deque(new_oplist)
 			if not new_oplist:
 				print(f'MAKING {m.id} available')
 				m.make_available()
-			for op in removed_ops:
-				m.waiting_time -= op.transform.duration
-			m.op_list = collections.deque(new_oplist)
+				m.waiting_time = 0
+			else:
+				m.waiting_time = m.op_list[-1].eta
+
+
+			print('New:')
+			print([str(op) for op in new_oplist])
+			print('REMOVED:')
+			print([str(op) for op in removed_ops])
+			print(f'Waiting time: {m.waiting_time}')
+
+
 
 		self.pusher.dispatch_queue_1.clear()
 		self.pusher.dispatch_queue_2.clear()
