@@ -7,7 +7,7 @@ class DB_handler:
 
 		try:
 			self._connection = psycopg2.connect(user = "ii",
-									password = "iisuckz",
+									password = "ii_project",
 									host = host,
 									port = port) #https://stackoverflow.com/questions/32812463/setting-schema-for-all-queries-of-a-connection-in-psycopg2-getting-race-conditi
 
