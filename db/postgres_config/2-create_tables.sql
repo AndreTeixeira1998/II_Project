@@ -38,7 +38,7 @@ CREATE TABLE pieces (
 	piece_id serial PRIMARY KEY,
 	piece_type INTEGER NOT NULL,
 	piece_state PIECE_STATE DEFAULT 'pending',
-	associated_order INTEGER REFERENCES orders(order_id)
+	associated_order INTEGER
 );
 
 CREATE TABLE stored_pieces (

@@ -300,49 +300,47 @@ class DB_handler:
 		Query = "UPDATE factory.unloading_zones SET P" + str(piece_type) + " = P" + str(piece_type) + " + 1 WHERE area_id = %s"
 		self.insert_update_query(Query, str(destination))
 
-	def add_stored_pieces(self, piece_type, amount = 1):
+	# Em principio funciona, mas preferia a de baixo
+#	def update_stored_pieces(self, piece_type, amount):
+#		"""
+#		Updates pieces stored in the wharehouse
+#		"""
+#
+#		Query = "UPDATE factory.stored_pieces SET amount = " + str(amount) + " WHERE piece_type = %s"
+#		self.insert_update_query(Query,str(piece_type))
+
+	def update_stored_pieces(self, piece_type, amount):
 		"""
-		Adds one (or more) piece from the db
-			db.add_stored_pieces(1)
-		For cutom amount:
-			db.add_stored_pieces(1, 12)
+		Sets piece amount into the db
+			db.update_stored_pieces(1, 12)
 		"""
+		Query = "UPDATE factory.stored_pieces SET amount = %s WHERE piece_type = %s"
+		values_condition = [str(amount), str(piece_type)]
 
-		Query = "UPDATE factory.stored_pieces SET amount = amount + " + str(amount) + " WHERE piece_type = %s"
-		self.insert_update_query(Query,str(piece_type))
+		self.insert_update_query(Query,values_condition)
 
-
-	def update_on_factory(self, table, id, quantity):
+	def update_on_factory(self, id, quantity, batch_size, processed):
 		"""
 		Adds a piece that was placed on the factory in the db
 		"""
-		Query = "UPDATE factory." + table + " SET on_factory = " + str(quantity) + ", pending = (batch_size - produced - " + str(quantity) + ")  WHERE order_id = " + str(id) 
+		pending = batch_size - quantity - processed
+		if pending > batch_size:
+			pending = batch_size
+		elif pending < 0:
+			pending = 0
+		Query = "UPDATE factory.transform_orders SET on_factory = " + str(quantity) + ", pending = " + str(pending) + "  WHERE order_id = " + str(id) 
 		self.insert_update_query(Query)
 
 
 
-	def update_processed_transform(self, quant, id):
-		Query = "UPDATE factory.transform_orders SET produced = " + str(quant) + ", pending = (batch_size - on_factory - " + str(quant) + ")  WHERE order_id = " + str(id)
+	def update_processed_transform(self, quantity, id, batch_size, on_factory):
+		pending = batch_size - quantity - on_factory
+		if pending > batch_size:
+			pending = batch_size
+		elif pending < 0:
+			pending = 0
+		Query = "UPDATE factory.transform_orders SET produced = " + str(quantity) + ", pending = " + str(pending) + "  WHERE order_id = " + str(id)
 		self.insert_update_query(Query)
-
-	def subtract_stored_pieces(self, piece_type, amount = 1):
-		"""
-		Subtracts one (or more) piece from the db
-			db.subtract_stored_pieces(1)
-		For cutom amount:
-			db.subtract_stored_pieces(1, 12)
-		Note: If the subtraction would make the amount on the db negative, the amount is set to 0
-		"""
-		data = self.select("stored_pieces", content = ["amount"], where = {"piece_type" : piece_type})
-		if (data[0][0] - amount <= 0):
-			print("####### Numero de peças não pode ser negativo (", data[0][0] - amount,") #######")
-			if (data[0][0] != 0):
-				print("#######       Numero de peças na DB colocado a 0      #######")
-				self.update_stored_pieces(piece_type, 0)
-			return
-		else:
-			Query = "UPDATE factory.stored_pieces SET amount = amount - "+ str(amount) + " WHERE piece_type = %s"
-			self.insert_update_query(Query,str(piece_type))
 
 
 	def subtract_on_factory(self, table, id):
@@ -354,15 +352,7 @@ class DB_handler:
 		self.insert_update_query(Query)
 
 
-	def update_stored_pieces(self, piece_type, amount):
-		"""
-		Sets piece amount into the db
-			db.update_stored_pieces(1, 12)
-		"""
-		Query = "UPDATE factory.stored_pieces SET amount = %s WHERE piece_type = %s"
-		values_condition = [str(amount), str(piece_type)]
 
-		self.insert_update_query(Query,values_condition)
 
 
 
