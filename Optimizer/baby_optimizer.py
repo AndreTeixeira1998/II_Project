@@ -41,7 +41,7 @@ class Tracker:
 			print('Updating processed')
 			curr_order.update_processed(quantity)
 			print('Updated')
-		print("IISUCKZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+		#print("IISUCKZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
 		self.check_cell3_clearance()
 		self.check_mb3_clearance()
 
@@ -462,7 +462,7 @@ class HorOptimizer(Optimizer):
 			print(new_oplist)
 			if not new_oplist:
 				print(f'VAZIo')
-				#m.make_available()
+				m.make_available()
 				m.waiting_time = 0
 			else:
 				m.waiting_time = m.op_list[-1].eta
@@ -475,15 +475,19 @@ class HorOptimizer(Optimizer):
 			#print(f'Waiting time: {m.waiting_time}')
 
 
-
+		"""
 		self.pusher.dispatch_queue_1.clear()
 		self.pusher.dispatch_queue_2.clear()
 		self.pusher.dispatch_queue_3.clear()
 		cond_pusher1.set()
 		cond_pusher2.set()
 		cond_pusher3.set()
-
-		self.dispatch_queue.clear()
+		"""		
+		ii=[piece for piece in self.dispatch_queue if piece.order.order_type== 'Unload']
+		
+		self.dispatch_queue= collections.deque(ii)
+		
+		#self.dispatch_queue.clear()
 		#self.print_machine_schedule()
 		self.print_pusher_queues()
 		lock.release()

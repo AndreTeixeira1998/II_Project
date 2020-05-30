@@ -4,7 +4,7 @@ from threading import Thread
 from queue import Queue
 	
 
-buf = 2048
+buf = 4096
 
 
 

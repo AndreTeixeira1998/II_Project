@@ -267,8 +267,6 @@ class GUI_V2:
 			self._refresh_tab(2, data)
 			
 			self.stat_man.update_warehouse()
-
-			self.stat_man.update_wharehouse()
 			
 			time.sleep(5)
 
