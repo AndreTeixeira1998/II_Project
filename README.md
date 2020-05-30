@@ -61,17 +61,16 @@ You can now access the PgAdmin webpage by going to your prefered browser and ent
 
 Where your `<YOUR-DOCKER-MACHINE-IP>` is usually by default `192.168.99.100` if not, you can check it by running `docker-machine ip` on the shell.
 
-## Default Credentials
-
-#### pgadmin
+#### Credentials
+##### pgadmin
 **User:** ii@project.com  
 **Password:** ii_project  
 
-***
-
-#### database  
+##### database  
 **User:** ii  
 **Password:** ii_project
+
+***
 
 ### Removing the database
 
