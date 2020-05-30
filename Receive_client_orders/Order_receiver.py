@@ -4,10 +4,8 @@ from threading import Thread
 from queue import Queue
 	
 
-host = "172.29.0.51"
-port = 54321
 buf = 2048
-addr = (host,port)
+
 
 
 def answer_request(request):
@@ -21,8 +19,11 @@ def answer_request(request):
 
 	
 
-def order_receive(out_q, notify_new_order = False):
+def order_receive(out_q, notify_new_order = False, host = "127.0.0.1", port = 54321):
 	s = socket(AF_INET,SOCK_DGRAM)
+
+	if isinstance(port, str): port = int(port)
+
 	s.bind((host,port))
 
 	while True:
@@ -30,16 +31,15 @@ def order_receive(out_q, notify_new_order = False):
 		received_orders = parse(data, addr_port[0], addr_port[1])
 		for index,rec in enumerate(received_orders):
 			if rec.get("order_type") == "Request_Stores":
-				#if notify_new_order == True:
-				#	print("Send to", rec.get("address"), rec.get("port"))
+				if notify_new_order == True:
+					print("Send to", rec.get("address"), rec.get("port"))
 				answer_request(rec)
 				del received_orders[index]
 
 		out_q.put(received_orders)
 		if notify_new_order == True:
 			for ord in received_orders:
-				pass
-				#print("Data received: ", ord.get("order_type"))
+				print("Order received: ", ord.get("order_type"))
 
 def _Communication_thread_example(in_q):
 	orders = []
