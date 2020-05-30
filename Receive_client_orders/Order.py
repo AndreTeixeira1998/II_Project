@@ -4,9 +4,9 @@ import xml.etree.ElementTree as ET
 # from datetime import datetime
 
 import sys
-sys.path.insert(0, "..")
-sys.path.insert(0, "DB")
-from db_handler import DB_handler
+#sys.path.insert(0, "..")
+#sys.path.insert(0, "DB")
+from DB.db_handler import DB_handler
 
 #######################################################################################################
 #

@@ -1,9 +1,9 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter.ttk import *
 from threading import Thread
 import time
 
-from stat_manager import StatMan
+from Statistics.stat_manager import StatMan
 
 columns_orders = ["Id", "Type", "State", "Produced", "In production", "Pending", "Reception time", "Beggining", "End", "Slack"]
 columns_machines = ["Type/Cell", "Total time", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "Total"]
@@ -25,11 +25,11 @@ columns_unload = ["Unload Zone", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8",
 #		self.window.title("Factory Statistics")
 #		self.window.geometry(dimensions)
 #
-#		self.tab_control = ttk.Notebook(self.window)
+#		self.tab_control = tkinter.ttk.Notebook(self.window)
 #
-#		tab_orders = ttk.Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
-#		tab_machines = ttk.Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
-#		tab_unload = ttk.Frame(self.tab_control)		## Frame inside a Tab; We will display the DataFrame here
+#		tab_orders = tkinter.ttk.Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
+#		tab_machines = tkinter.ttk.Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
+#		tab_unload = tkinter.ttk.Frame(self.tab_control)		## Frame inside a Tab; We will display the DataFrame here
 #
 #		self.tab_control.add(tab_orders, text='Orders')
 #		self.tab_control.add(tab_machines, text='Machines')
@@ -193,11 +193,11 @@ class GUI_V2:
 		frame = Frame(self.window)
 		frame.pack(fill="both")
 
-		self.tab_control = ttk.Notebook(frame)
+		self.tab_control = Notebook(frame)
 
-		tab_orders = ttk.Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
-		tab_machines = ttk.Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
-		tab_unload = ttk.Frame(self.tab_control)		## Frame inside a Tab; We will display the DataFrame here
+		tab_orders = Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
+		tab_machines = Frame(self.tab_control) 		## Frame inside a Tab; We will display the DataFrame here
+		tab_unload = Frame(self.tab_control)		## Frame inside a Tab; We will display the DataFrame here
 
 		self.tab_control.add(tab_orders, text='Orders')
 		self.tab_control.add(tab_machines, text='Machines')
@@ -233,27 +233,27 @@ class GUI_V2:
 	def _refresh_tab(self, tab, data):
 		for row_index,row in enumerate(data):
 			for column_index,column in enumerate(row):
-				label = Label(self.tabs[tab], text = str(column), bg="white",fg="black",padx=3,pady=3)
-				label.grid(row=row_index + 1,column=column_index,sticky="nsew",padx=1,pady=1)
+				label = Label(self.tabs[tab], text = str(column), background="white",foreground="black")
+				label.grid(row=row_index + 1,column=column_index,sticky="nsew")
 				self.tabs[tab].grid_columnconfigure(column_index, weight=1)
 
 	def _draw_statistics(self):
 		for index,col in enumerate(columns_orders):
-			label = Label(self.tabs[0], text = col, bg="white", fg="black", padx=3, pady=3)
+			label = Label(self.tabs[0], text = col, background="white", foreground="black")
 			label.config(font=('Arial', 12))
-			label.grid(row=0, column=index, sticky="nsew", padx=1, pady=1)
+			label.grid(row=0, column=index, sticky="nsew")
 			self.tabs[0].grid_columnconfigure(index, weight=1)
 		
 		for index,col in enumerate(columns_machines):
-			label = Label(self.tabs[1], text = col, bg="white", fg="black", padx=3, pady=3)
+			label = Label(self.tabs[1], text = col, background="white", foreground="black")
 			label.config(font=('Arial', 12))
-			label.grid(row=0, column=index, sticky="nsew", padx=1, pady=1)
+			label.grid(row=0, column=index, sticky="nsew")
 			self.tabs[1].grid_columnconfigure(index, weight=1)
 
 		for index,col in enumerate(columns_unload):
-			label = Label(self.tabs[2], text = col, bg="white", fg="black", padx=3, pady=3)
+			label = Label(self.tabs[2], text = col, background="white", foreground="black")
 			label.config(font=('Arial', 12))
-			label.grid(row=0, column=index, sticky="nsew", padx=1, pady=1)
+			label.grid(row=0, column=index, sticky="nsew")
 			self.tabs[2].grid_columnconfigure(index, weight=1)
 
 		while self._glob_flag:

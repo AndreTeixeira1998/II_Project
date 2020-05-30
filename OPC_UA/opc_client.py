@@ -148,7 +148,7 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 					print(f"Dispatching piece no {piece.id}: ")
 					#print([(m.id,m.waiting_time) for m in optimizer.state.machines.values()])
 					optimizer.tracker.mark_dispatched(piece.id)
-					#optimizer.print_machine_schedule()
+					optimizer.print_machine_schedule()
 					cond.clear()
 				#await asyncio.sleep(1)
 
@@ -211,7 +211,7 @@ async def get_stocks(optimizer, stock_nodes):
 	return optimizer.stock
 
 async def opc_client_run(optimizer, loop):
-	url = 'opc.tcp://172.29.0.61:4840/'
+	url = 'opc.tcp://172.22.129.238:4840/'
 	print('Connecting to PLC')
 	async with Client(url=url) as client:
 		print('Reading Node information')

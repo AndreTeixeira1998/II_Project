@@ -298,7 +298,7 @@ class Optimizer:
 		low_lim = self.state.pieces_optimized
 		if isinstance(order, TransformOrder):
 			high_lim = self.state.pieces_optimized + order.quantity - (order.processed + order.on_factory)
-			if order.before_type == 4 and order.after_type == 7:
+			if order.before_type == 4 and order.after_type == 7 and not self.is_reversed:
 				if (order.processed + order.on_factory) < order.quantity:
 					self.reset()
 					self.reverse()
@@ -457,9 +457,11 @@ class HorOptimizer(Optimizer):
 			new_oplist = [op for op in m.op_list if op.piece_id in self.tracker.pieces_on_transit]
 			removed_ops = [op for op in m.op_list if op.piece_id not in self.tracker.pieces_on_transit]
 			m.op_list = collections.deque(new_oplist)
+
+			print(new_oplist)
 			if not new_oplist:
-				print(f'MAKING {m.id} available')
-				m.make_available()
+				print(f'VAZIo')
+				#m.make_available()
 				m.waiting_time = 0
 			else:
 				m.waiting_time = m.op_list[-1].eta

@@ -9,8 +9,8 @@ from Receive_client_orders.Order import *
 from Receive_client_orders.Order_receiver import *
 from DB.db_handler import *
 from Optimizer.transfgraph import Machine
-sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, juro por deus que não percebo os  retardanços do windows com as paths
-from GUI import GUI_V2
+#sys.path.insert(0, "Statistics") # Só assim é que me começou a funcionar, juro por deus que não percebo os  retardanços do windows com as paths
+from Statistics.GUI import GUI_V2
 from Optimizer.baby_optimizer import HorOptimizer
 from DB.db_handler import *
 from lock import lock, optimization_lock
