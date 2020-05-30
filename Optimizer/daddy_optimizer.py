@@ -58,9 +58,9 @@ class DaddyOptimizer(Optimizer):
 		# Depth-First Search
 		while open_states:
 			if timeout and (time.time() - start) > timeout:
-				print(f"TIMEOUT of {timeout}s exceeded")
+				#print(f"TIMEOUT of {timeout}s exceeded")
 				if best_state:
-					print(f"Returning best result achieved")
+					#print(f"Returning best result achieved")
 					return best_state
 				else:
 					raise ValueError("Order timeout is not enough to converge. Please increase it or reduce order size")
@@ -90,7 +90,7 @@ class DaddyOptimizer(Optimizer):
 if __name__ == '__main__':
 
 	optimizer = DaddyOptimizer()
-	print("Using DaddyOptimizer\r\n")
+	#print("Using DaddyOptimizer\r\n")
 
 	fake_order = []
 

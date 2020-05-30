@@ -65,66 +65,56 @@ class OptimizerSubHandler(SubHandler):
 		# CRIAR OUTRO SUB HANDLER
 		if str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x" and val is True:
-			print("Release the prisioners")
 			self.cond.set()
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t1b_i.sensor" and val is True:
-			print("LOCK AND LOAD1")
 			self.cond_p1.set()
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.c7t7b_i.sensor" and val is True:
-			print("LOCK AND LOAD2")
 			self.cond_p2.set()
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp1" and val is True:
-			print('UNLOAD SERVICES 1 !!!!')
 			self.optimizer.pusher.count_1 = 0
 			self.cond_pusher_1.set()
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp2" and val is True:
-			print('UNLOAD SERVICES 2 !!!!')
 			self.optimizer.pusher.count_2 = 0
 			self.cond_pusher_2.set()
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.vazio_ramp3" and val is True:
-			print('UNLOAD SERVICES 3 !!!!')
 			self.optimizer.pusher.count_3 = 0
 			self.cond_pusher_3.set()
 
 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.piece_array[2].id" and val != 0:
-			print(f"Piece {val} complete")
 			self.optimizer.tracker.mark_complete(int(val))
-			self.optimizer.tracker.print_tracking_info()
-			self.optimizer.tracker.print_order_status()
+			#self.optimizer.tracker.print_tracking_info()
+			#self.optimizer.tracker.print_order_status()
             
 		##UNLOAD 1 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai1" and val != 0:
-			print(f"Piece {val} unload complete")
 			self.optimizer.tracker.mark_unloaded(int(val))
-			self.optimizer.tracker.print_tracking_info()
-			self.optimizer.tracker.print_order_status()
+			#self.optimizer.tracker.print_tracking_info()
+			#self.optimizer.tracker.print_order_status()
 		##UNLOAD 2 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai2" and val != 0:
-			print(f"Piece {val} unload complete")
 			self.optimizer.tracker.mark_unloaded(int(val))
-			self.optimizer.tracker.print_tracking_info()
-			self.optimizer.tracker.print_order_status()            
+			#self.optimizer.tracker.print_tracking_info()
+			#self.optimizer.tracker.print_order_status()            
 		##UNLOAD 3 
 		elif str(
 				node.nodeid.Identifier) == "|var|CODESYS Control Win V3 x64.Application.GVL.la_vai3" and val != 0:
-			print(f"Piece {val} unload complete")
 			self.optimizer.tracker.mark_unloaded(int(val))
-			self.optimizer.tracker.print_tracking_info()
-			self.optimizer.tracker.print_order_status()
+			#self.optimizer.tracker.print_tracking_info()
+			#self.optimizer.tracker.print_order_status()
             
             
 		for machine in self.encoding.keys():

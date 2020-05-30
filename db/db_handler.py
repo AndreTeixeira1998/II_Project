@@ -90,8 +90,8 @@ class DB_handler:
 				else:
 					self._cursor.execute(query, tuple(tup))
 					data = self._cursor.fetchall()
-			except(Exception, psycopg2.Error) as error:
-					print("Error while connecting to PostgreSQL", error)
+			###except(Exception, psycopg2.Error) as error:
+			#		print("Error while connecting to PostgreSQL", error)
 
 		############################# Fecha mutex
 		return data
@@ -106,8 +106,8 @@ class DB_handler:
 				else:
 					self._cursor.execute(query, tuple(tup))
 					self._connection.commit()
-			except(Exception, psycopg2.Error) as error:
-					print("Error while connecting to PostgreSQL", error)
+			###except(Exception, psycopg2.Error) as error:
+			#		print("Error while connecting to PostgreSQL", error)
 		############################# Fecha mutex
 
 

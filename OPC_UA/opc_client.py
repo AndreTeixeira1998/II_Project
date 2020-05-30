@@ -75,24 +75,19 @@ class OnePiece():
 
 
 async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pusher3, flag, reverse_flag):
-	# print("######################debug: write() started")
 	sender = OnePiece()
 	PIECES_TO_SEND = 3
 
 	# Direct -> Reverse
 	if flag.is_set():
-		print('LOCKKKED')
 		if cell3_is_clear.is_set():
-			print('UNLOCKKKED')
 			flag.clear()
 		else:
 			return
 
 	# Reverse -> Direct
 	elif reverse_flag.is_set():
-		print('Locked to reverse')
 		if mb3_is_clear.is_set():
-			print('UNLOCKKKED to reverse')
 			reverse_flag.clear()
 		else:
 			return
@@ -137,28 +132,22 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 			if optimizer.stock[first_type] <= 0:
 				optimizer.reset()
 			else:
-				#print('TA FIXE MANO')
 				piece = optimizer.dispatch_queue.popleft()
-				#print("id: ", piece.id, " path: ", piece.path)
-				# await block_pieces.wait()
 				if (piece.id not in optimizer.tracker.pieces_on_transit) \
 					and (piece.id not in optimizer.tracker.pieces_complete):
 					await sender.send_path(piece, var_write)
 					piece.order._db.insert('pieces', piece_id=piece.id, piece_type=piece.type, piece_state='dispatched', associated_order=piece.order.order_number)
-					print(f"Dispatching piece no {piece.id}: ")
-					#print([(m.id,m.waiting_time) for m in optimizer.state.machines.values()])
-					optimizer.tracker.mark_dispatched(piece.id)
-					#optimizer.print_machine_schedule()
+
 					cond.clear()
-				#await asyncio.sleep(1)
+
 
 
 async def swap_tools(tool_nodes, optimizer):
-	# print('#debug swap tools')
+
 	sender = OnePiece()
 	for machine in optimizer.state.machines.values():
 		if machine.next_tool:
-			# print(f'{machine.id}: {tool_nodes[machine.id]} {tool_dic[machine.next_tool]} {type(tool_dic[machine.next_tool])}')
+
 			await sender.write_int16(tool_nodes[machine.id], tool_dic[machine.next_tool])
 		elif machine.op_list:
 			machine.next_tool = machine.op_list[0].transform.tool
@@ -167,7 +156,6 @@ async def swap_tools(tool_nodes, optimizer):
 
 
 async def read(client, vars, handler):
-	print("######################debug: read() started")
 	sub = await client.create_subscription(SUB_PERIOD, handler)
 	await sub.subscribe_data_change(vars)
 
@@ -199,7 +187,6 @@ async def unload(optimizer, cond_pusher_1):
 			optimizer.pusher.count_1=0
 			order_ = optimizer.pusher.dispatch_queue_1.popleft()
 
-			print("quantidade em falta: ", order_.quantity)
 			optimizer.order_handler(order_)
 			cond_pusher_1.clear()
 		await asyncio.sleep(1)
@@ -283,7 +270,6 @@ async def opc_client_run(optimizer, loop, host = "localhost", port = "4840"):
 
 		stock_nodes = {}
 		for ptype in range(1, 10):
-			print(str(ptype))
 			stock_nodes[ptype] = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.p" + str(ptype))
 			m_vars.append(stock_nodes[ptype]) 	# Para as peças na wharehouse
 

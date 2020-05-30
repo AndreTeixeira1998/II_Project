@@ -27,7 +27,6 @@ class Tracker:
 			order.begin_order()
 
 	def mark_complete(self, piece_id):
-		print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		curr_order.on_factory -= 1
 		curr_order.processed += 1
@@ -38,15 +37,11 @@ class Tracker:
 		if quantity == curr_order.get("quantity"):
 			curr_order.order_complete()
 		else:
-			print('Updating processed')
 			curr_order.update_processed(quantity)
-			print('Updated')
-		#print("IISUCKZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
 		self.check_cell3_clearance()
 		self.check_mb3_clearance()
 
 	def mark_unloaded(self, piece_id):
-		#print(f'Mark_completed {piece_id}')
 		curr_order = self.state.pieces[piece_id].order
 		self.pieces_complete[piece_id] = self.pieces_on_transit[piece_id]
 		self.pieces_on_transit.pop(piece_id)
@@ -57,14 +52,14 @@ class Tracker:
 		if quantity == curr_order.get("quantity"):
 			curr_order.order_complete()
 		else:
-			#print('Updating processed')
+			
 			curr_order.update_processed(quantity)
 			if curr_order.order_type=='Transform':
 				curr_order.update_on_factory()
-			#print('Updated')
+
 
 	def mark_dispatched(self, piece_id):
-		#print(f'Mark_dispatched {piece_id} -> order {self.state.pieces[piece_id].order.order_number}')
+
 		curr_order = self.state.pieces[piece_id].order
 		curr_order.on_factory += 1
 		self.pieces_on_transit[piece_id] = self.state.pieces[piece_id]
@@ -89,14 +84,12 @@ class Tracker:
 				if piece.order.order_type == 'Transform':
 					for m in piece.machines:
 						if m == 'Ma_3' or m == 'Mb_3':
-							#print('CELL 3 is busy')
+							
 							cell3_is_clear.clear()
 							return False
-			#print('CELL 3 is clear')
 			cell3_is_clear.set()
 			return True
 		else:
-			#print('No pieces on factory floor')
 			cell3_is_clear.set()
 			return True
 
@@ -107,14 +100,13 @@ class Tracker:
 				if piece.order.order_type == 'Transform':
 					for m in piece.machines:
 						if m == 'Mb_3':
-							#print('Machine B3 is busy')
+
 							mb3_is_clear.clear()
 							return False
-			#print('machine B3 is clear')
+
 			mb3_is_clear.set()
 			return True
 		else:
-			#print('No pieces on factory floor')
 			mb3_is_clear.set()
 			return True
 
@@ -255,8 +247,8 @@ class Optimizer:
 				"Ma_3": 28, "Mb_3": 29, "Mc_3": 30, "end_your_life": final}
 		for trans in trans_path:
 			encoded = dict[str(trans.machine)]
-			if debug:
-				print(encoded)
+			#if debug:
+			#	print(encoded)
 			path.append(encoded)
 		path.append(dict["end_your_life"][0])
 		# print(path)
@@ -276,20 +268,20 @@ class Optimizer:
 			final_path.extend(path[1:])
 			final_duration = final_duration + duration
 
-			if debug:
-				pass
+			#if debug:
+			#	pass
 		# print(f"\r\nConveyor pathing: {frm} -> {to}")
 		# print("Shortest path {}, ETA = {} s".format([conveyor.id for conveyor in path], duration))
 
-		if debug:
-			print("Shortest FINAL path {}, ETA = {} s".format([conveyor.id for conveyor in final_path], final_duration))
+		#if debug:
+		#	print("Shortest FINAL path {}, ETA = {} s".format([conveyor.id for conveyor in final_path], final_duration))
 		return [conveyor.id for conveyor in final_path]
 
 	def compute_conveyor(self, graph, frm: str, to: str, search=dijkstra_conveyors, debug=False):
 		duration, path = search(graph, frm, to)
 		if debug:
-			print(f"\r\nComputing conveyor path: {frm} -> {to}")
-			print("Shortest path {}, ETA = {} s".format([conveyor.id for conveyor in path], duration))
+			#print(f"\r\nComputing conveyor path: {frm} -> {to}")
+			#print("Shortest path {}, ETA = {} s".format([conveyor.id for conveyor in path], duration))
 
 			return duration, path
 
@@ -441,7 +433,6 @@ class HorOptimizer(Optimizer):
 			for piece_id in range(order.unloaded + self.state.pieces_optimized, order.quantity + self.state.pieces_optimized):
 				self.state.pieces_optimized += 1
 
-		print('Optimized:')
 		#self.print_machine_schedule()
 		#self.print_pusher_queues()
 		return self.state
@@ -459,9 +450,7 @@ class HorOptimizer(Optimizer):
 			removed_ops = [op for op in m.op_list if op.piece_id not in self.tracker.pieces_on_transit]
 			m.op_list = collections.deque(new_oplist)
 
-			print(new_oplist)
 			if not new_oplist:
-				print(f'VAZIo')
 				m.make_available()
 				m.waiting_time = 0
 			else:
@@ -489,7 +478,7 @@ class HorOptimizer(Optimizer):
 		
 		#self.dispatch_queue.clear()
 		#self.print_machine_schedule()
-		self.print_pusher_queues()
+		#self.print_pusher_queues()
 		lock.release()
 		optimization_lock.release()
 

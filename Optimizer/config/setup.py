@@ -111,7 +111,7 @@ def optimizer_init(optimizer):
 				for seq in sequences:
 					optimizer.direct_recipes[f'{p_before}->{p_after}'].append(seq)
 
-	print('Automatic forward recipes loaded.')
+	#print('Automatic forward recipes loaded.')
 
 	# Custom Recipes
 	optimizer.direct_recipes['1->9'].append([Transform(optimizer.state.machines[f'Ma_1'], 'T1', 15),
@@ -131,7 +131,7 @@ def optimizer_init(optimizer):
 	optimizer.direct_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_3'], 'T2', 30)])
 
 
-	print('Custom direct recipes loaded')
+	#print('Custom direct recipes loaded')
 
 	for p_before in range(1,10):
 		for p_after in range(1,10):
@@ -157,7 +157,7 @@ def optimizer_init(optimizer):
 					for seq in sequences:
 						optimizer.reverse_recipes[f'{p_before}->{p_after}'].append(seq)
 
-	print('Reverse automatic recipes loaded')
+	#print('Reverse automatic recipes loaded')
 
 	optimizer.reverse_recipes['1->4'].append([Transform(optimizer.state.machines[f'Ma_2'], 'T1', 15),
 											  Transform(optimizer.state.machines[f'Ma_2'], 'T1', 15),
@@ -189,7 +189,7 @@ def optimizer_init(optimizer):
 
 
 
-	print('Reverse custom recipes loaded')
+	#print('Reverse custom recipes loaded')
 
 
 
@@ -522,7 +522,7 @@ def optimizer_init(optimizer):
 
 	optimizer.add_conveyor_path(optimizer.reverse_graph,  47, 46, PASS)
 
-	print('Direct mode enabled')
+	#print('Direct mode enabled')
 	optimizer.path_graph = optimizer.direct_graph
 	optimizer.recipes = optimizer.direct_recipes
 	optimizer.is_inversed = False
@@ -532,5 +532,5 @@ def optimizer_init(optimizer):
 	#optimizer.recipes = optimizer.reverse_recipes
 	#optimizer.is_inversed = True
 
-	print('Optimizer setup complete')
+	#print('Optimizer setup complete')
 

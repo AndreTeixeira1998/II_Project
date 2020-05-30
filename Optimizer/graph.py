@@ -93,5 +93,5 @@ if __name__ == '__main__':
     g.add_edge('d', 'e', 6)
     g.add_edge('e', 'f', 9)
 
-    g.print_edges()
-    g.print_graph()
+    #g.print_edges()
+    #g.print_graph()

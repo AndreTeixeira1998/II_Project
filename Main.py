@@ -35,7 +35,6 @@ def parse_from_db_transformation(data, db):
 
 def check_stock(optimizer, order):
 	if order.order_type == 'Transform':
-		#print(optimizer.stock[order.before_type])
 		return optimizer.stock[order.before_type] > 0
 	elif order.order_type == 'Unload':
 		return optimizer.stock[order.piece_type] > 0
@@ -59,7 +58,7 @@ def compute_orders(optimizer, q_udp_in, pending_orders):
 			optimizer.order_handler(o)
 	
 	while True:
-#		print('Update orders')
+
 		while not q_udp_in.empty():
 			order = q_udp_in.get()
 			for o in order:
@@ -88,7 +87,6 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 			idx2remove = []
 			for idx, order in enumerate(orders_wait_stock):
 				if check_stock(optimizer, order):
-					print(f'Posso fazer a ordem {order.order_number}')
 					orders_received.append(order)
 					idx2remove.append(idx)
 				else:
@@ -102,7 +100,6 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 				orders_received.append(o)
 
 		if optimizer.orders2do:
-			print(f'Orders 2 do: {len(optimizer.orders2do)}')
 			for order in optimizer.orders2do:
 				orders_received.append(order)
 			optimizer.orders2do.clear()
@@ -114,11 +111,9 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 		if orders_received:
 			for idx, order in enumerate(orders_received):
 				if check_stock(optimizer, order):
-					print(f'TENHO STOCK para a ordem {order.order_number}')
 					orders_to_schedule.append(order)
 					#orders_received.pop(idx)
 				else:
-					print('OHHHHH SHIIITTT N TENHO STOCK')
 					orders_wait_stock.append(order)
 					#orders_received.pop(idx)
 			orders_received.clear()
@@ -141,30 +136,25 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 			orders_to_schedule.clear()
 			orders_scheduled.sort(key=lambda order: order[0])
 
-			print('## schedule ##')
-			for priority, order in orders_scheduled:
-				print(f'{order.order_number}: {priority}')
-				q_orders.put(order)
-			print('## end ##')
+			#print('## schedule ##')
+			#for priority, order in orders_scheduled:
+			#	print(f'{order.order_number}: {priority}')
+			#	q_orders.put(order)
+			#print('## end ##')
 
 		for _, order in orders_scheduled:
-			print(f'Optimizing order {order.order_number}')
 			optimizer.order_handler(order)
 			optimizer.optimize_single_order(order)
-			print(f'Optimization complete')
 			optimizer.active_orders.append(order)
-		#optimization_lock.release()
+
 
 
 		if optimizer.is_reversed:
-			#print('ma',optimizer.state.machines['Ma_3'].op_list)
-			#print('mc',optimizer.state.machines['Mc_3'].op_list)
+
 			if not optimizer.state.machines['Ma_3'].op_list \
 					and not optimizer.state.machines['Mc_3'].op_list:
 				optimizer.reset()
-				print('RESETTTTTTTTTTTTTT')
 				optimizer.direct()
-				print('SENTIDO DIRETO')
 
 		orders_scheduled.clear()
 
@@ -172,40 +162,25 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 
 def update_dispatch(optimizer):
 	while True:
-#		print('Update dispatch')
-		#optimization_lock.acquire()
 		for machine in reversed(optimizer.state.machines.values()):
-			#print(f'{machine}: {machine.is_free}')
 			if machine.is_free and machine.op_list:
 				next_op = machine.op_list[0]
 				next_piece = next_op.piece_id
 				if next_op.step == 1:
 					if next_piece in optimizer.tracker.pieces_on_transit:
-						print('WARNING: Piece has already been dispatched')
-						#optimizer.dispatch_queue.append(optimizer.state.pieces[next_piece])
+
 						machine.make_unavailable()
 					elif next_piece in optimizer.dispatch_queue:
-						print('WARNING: Piece is already staged for dispatch')
 						machine.make_unavailable()
 					else:
 						optimizer.dispatch_queue.append(optimizer.state.pieces[next_piece])
 						machine.make_unavailable()
 				else:
 					pass
-					#machine.make_unavailable()
+
 			elif not(machine.is_free or machine.op_list):
 				pass
-				#machine.make_available()
 
-			#elif (not machine.is_free) and machine.op_list:
-			#	next_op = machine.op_list[0]
-			#	next_piece = next_op.piece_id
-			#	if next_piece in optimizer.dispatch_queue:
-			#		machine.make_available()
-			#	#else:
-			#	#	machine.make_unavailable()
-
-		#optimization_lock.release()
 		time.sleep(0.1)
 
   
@@ -235,9 +210,7 @@ if __name__ == "__main__":
 	# Para usar na persistencia, verifica se há ordens na base de dados que faltam processar
 	pending_orders = []
 	pending_orders.extend(parse_from_db_unload(db.select("unload_orders", where= { "curr_state" : "pending", "curr_state1" : "active"}, operand='OR'),db))
-	print('ordens pendentes unload:' + str(len(pending_orders)))
 	pending_orders.extend(parse_from_db_transformation(db.select("transform_orders", where= { "curr_state" : "pending", "curr_state1" : "active"}, operand='OR'),db)) #, "curr_state" : "suspended"
-	print('ordens pendentes transform + unload:' + str(len(pending_orders)))
 
 	q_udp = Queue()		#	Exchanges information from order receiver to the next stage of the program
 	t_order_rec = Thread(target = order_receive, args = (q_udp, False, configuations["UDP"]["Host"], configuations["UDP"]["Port"], ))
