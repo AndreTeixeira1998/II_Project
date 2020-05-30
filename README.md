@@ -1,5 +1,7 @@
 # II Project
 
+This project is based on python and codesys, and runs on Windows 10.
+
 ## Setting up the MES
 
 It is possible to change the MES to interact with the PLC, the database and the UDP as long as they all share the same network. Under the file directory, the `config.json` should be changed with the IP of the machine running the respective service.
