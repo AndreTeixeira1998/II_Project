@@ -268,6 +268,8 @@ class GUI_V2:
 			
 			self.stat_man.update_warehouse()
 
+			self.stat_man.update_wharehouse()
+			
 			time.sleep(5)
 
 
