@@ -132,9 +132,9 @@ class TransformOrder(Order):
 				Order._db.update(table = "transform_orders", where = {"order_id" : order_number}, maxdelay = self.max_delay,
 								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity,
 								produced = processed, on_factory = on_factory, pending = self.quantity, state = state)
-
 			elif delete_on_duplicate:
-				del self
+				self.dont_append = True
+
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	#def __del__(self):
 	#	pass
@@ -179,14 +179,6 @@ class TransformOrder(Order):
 		"""
 		if Order._db != None:
 			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity, end_time = "NOW()", on_factory = 0, pending = 0)
-	
-	def update_processed(self, quant):
-		"""
-		Updates the number of pieces processed in the DB
-		"""
-		if Order._db != None:
-			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, produced = quant, pending = self.quantity - quant - self.on_factory)
-            
             
 	def begin_order(self):
 		"""
@@ -200,7 +192,15 @@ class TransformOrder(Order):
 		Adds a piece that is being put on the factory
 		"""
 		if Order._db != None:
-			Order._db.update_on_factory("transform_orders", self.order_number, self.on_factory)
+			Order._db.update_on_factory(self.order_number, self.on_factory, self.quantity, self.processed)
+
+	def update_processed(self, quant):
+		"""
+		Updates the number of pieces processed in the DB
+		"""
+		if Order._db != None:
+			Order._db.update_processed(quant, self.order_number, self.quantity, self.on_factory)
+
 		
 class UnloadOrder(Order):
 	def __init__(self, order_type, order_number, piece_type, destination, quantity, state = "pending", unloaded = 0, on_factory = 0, db = None, already_in_db = False):
@@ -219,6 +219,8 @@ class UnloadOrder(Order):
 		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior
 		update = False
 
+		delete_on_duplicate=True
+
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		#	Primeiro, verifica se há repetição de dados
 		if Order._db != None and not already_in_db:
@@ -226,11 +228,12 @@ class UnloadOrder(Order):
 			if not data: 
 				Order._db.insert(table = "unload_orders", order_id = self.order_number, destination = destination,
 								curr_type = piece_type, batch_size = quantity)
-			elif update == True:
+			elif update == True and not delete_on_duplicate:
 				Order._db.update(table = "unload_orders", where = {"order_id" : order_number},destination = destination,
 								curr_type = piece_type, batch_size = quantity,
 								state = state, unloaded = unloaded)
-
+			elif delete_on_duplicate:
+				self.delete_on_duplicate = True
 
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	#def __del__(self):
@@ -293,7 +296,7 @@ class UnloadOrder(Order):
 
 class Request_StoresOrder(Order):
 	def __init__(self, order_type, address, port, db = None):
-		order_number = 100
+		order_number = 1000
 		super(Request_StoresOrder, self).__init__(order_number, order_type)
 		self.address = address
 		self.port = port
@@ -346,15 +349,19 @@ def parse(file_string, address, port):
 					before_type = int(child.get("From")[1])
 					after_type = int(child.get("To")[1])
 					quantity = int(child.get("Quantity"))
-					orders.append(TransformOrder(order_type = order_type, order_number = order_number,
-									max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity))
+					t_order = TransformOrder(order_type = order_type, order_number = order_number,
+									max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity)
+					if hasattr(t_order, "dont_append"):
+						orders.append(t_order)
 				elif order_type == "Unload":
 					order_number = int(ord.attrib["Number"])
 					piece_type = int(child.get("Type")[1])
 					destination = int(child.get("Destination")[1])
 					quantity = int(child.get("Quantity"))
-					orders.append(UnloadOrder(order_number = order_number, order_type = order_type,
-									quantity = quantity, piece_type = piece_type, destination = destination))
+					u_order = UnloadOrder(order_number = order_number, order_type = order_type,
+									quantity = quantity, piece_type = piece_type, destination = destination)
+					if hasattr(t_order, "dont_append"):
+						orders.append(u_order)
 				else:
 					print("Error creating order (No such order type as %s)" % order_type)
 		elif ord.tag == "Request_Stores":

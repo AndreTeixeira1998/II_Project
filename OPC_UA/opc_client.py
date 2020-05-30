@@ -285,6 +285,7 @@ async def opc_client_run(optimizer, loop):
 		for ptype in range(1, 10):
 			print(str(ptype))
 			stock_nodes[ptype] = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.p" + str(ptype))
+			m_vars.append(stock_nodes[ptype]) 	# Para as peças na wharehouse
 
 		var_despacha_1_para_3 = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.tapetes.at1.Init.x")
 		m_vars.append(var_despacha_1_para_3)
