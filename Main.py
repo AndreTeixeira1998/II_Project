@@ -100,9 +100,8 @@ def order_scheduling(optimizer, q_udp_in, pending_orders, q_orders):
 				orders_received.append(o)
 
 		if optimizer.orders2do:
-			print('CARALHOOOOOOOO')
+			print(f'Orders 2 do: {len(optimizer.orders2do)}')
 			for order in optimizer.orders2do:
-				print('caralhooooo')
 				orders_received.append(order)
 			optimizer.orders2do.clear()
 

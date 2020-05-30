@@ -2,7 +2,7 @@ import psycopg2
 import threading
 
 class DB_handler:
-	def __init__(self, host = "172.29.0.55", port = "5432"):
+	def __init__(self, host = "172.29.0.94", port = "5432"):
 		self.mutex = threading.Lock()
 		try:
 			self._connection = psycopg2.connect(user = "ii",

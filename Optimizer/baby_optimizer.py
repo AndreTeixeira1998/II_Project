@@ -465,11 +465,11 @@ class HorOptimizer(Optimizer):
 				m.waiting_time = m.op_list[-1].eta
 
 
-			print('New:')
-			print([str(op) for op in new_oplist])
-			print('REMOVED:')
-			print([str(op) for op in removed_ops])
-			print(f'Waiting time: {m.waiting_time}')
+			#print('New:')
+			#print([str(op) for op in new_oplist])
+			#print('REMOVED:')
+			#print([str(op) for op in removed_ops])
+			#print(f'Waiting time: {m.waiting_time}')
 
 
 
