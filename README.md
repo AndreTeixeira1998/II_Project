@@ -6,7 +6,7 @@ After installing python3.8, create a virtual environment using the commands
 `python -m virtualenv venv`
 `.\venv\Scripts\activate`
 
-**Note**: Powershell should allow to run scripts to perform the previous commands. If that happens, follow this [link](https://stackoverflow.com/questions/4037939/powershell-says-execution-of-scripts-is-disabled-on-this-system)  
+**Note**: Powershell should allow to run scripts to perform the previous commands. If that happens, follow this [link](https://stackoverflow.com/questions/4037939/powershell-says-execution-of-scripts-is-disabled-on-this-system).  
 
 After setting up the virtual environment run the file requirements.txt  
 `python -m pip install -r requirements.txt`
@@ -69,8 +69,6 @@ Where your `<YOUR-DOCKER-MACHINE-IP>` is usually by default `192.168.99.100` if 
 ##### database  
 **User:** ii  
 **Password:** ii_project
-
-***
 
 ### Removing the database
 
