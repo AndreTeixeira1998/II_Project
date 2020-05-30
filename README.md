@@ -25,8 +25,8 @@ If you are running Windows 10 Pro, you can download [Docker Desktop](https://www
 1.	Oracle VM VirtualBox should be installed by default after installing docker. Open the application
 2.	Open the settigns and navigate to the Network tab
 3.	Open Port Forwading under the Advanced options
-4.	Create 2 new rules like the following
-		`Name: Rule 1, Host Port: 5050, Guest Port: 5050`
+4.	Create 2 new rules like the following  
+		`Name: Rule 1, Host Port: 5050, Guest Port: 5050`  
 		`Name: Rule 2, Host Port: 5432, Guest Port: 5432`
 
 
