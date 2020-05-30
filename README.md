@@ -1,12 +1,16 @@
 # II Project
 
+## Setting up the MES
+
+It is possible to change the MES to interact with the PLC, the database and the UDP as long as they all share the same network. Under the file directory, the `config.json` should be changed with the IP of the machine running the respective service.
+
+**Note**: All the arguments should be written surrounded by double quotation marks ("")
+
 ## Configuring the database
 
 In order to install docker on windows please download the latest docker toolbox .exe release from [the official repo](https://github.com/docker/toolbox/releases).
 
 **Notes**: You need to have Intel VT-x or AMD-V hardware virtualization enabled or the instalation will fail. If this happens, please enable it in your computers's BIOS and retry.
-
-If you are running Windows 10 Pro, you can download [Docker Desktop](https://www.docker.com/products/docker-desktop) which uses native Hyper-V virtualization instead of VirtualBox. In order to be able to run the software in all versions of Windows 10 we chose to use the toolbox version. Choose whichever version you prefer at your own risk.
 
 ### Installing Docker
 
