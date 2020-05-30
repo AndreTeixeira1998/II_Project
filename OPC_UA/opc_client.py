@@ -144,6 +144,7 @@ async def write(var_write, optimizer, cond, cond_pusher1, cond_pusher2, cond_pus
 				if (piece.id not in optimizer.tracker.pieces_on_transit) \
 					and (piece.id not in optimizer.tracker.pieces_complete):
 					await sender.send_path(piece, var_write)
+					piece.order._db.insert('pieces', piece_id=piece.id, piece_type=piece.type, piece_state='dispatched', associated_order=piece.order.order_number)
 					print(f"Dispatching piece no {piece.id}: ")
 					#print([(m.id,m.waiting_time) for m in optimizer.state.machines.values()])
 					optimizer.tracker.mark_dispatched(piece.id)

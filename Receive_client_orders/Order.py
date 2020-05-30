@@ -119,6 +119,8 @@ class TransformOrder(Order):
 		# Colocar a verdadeiro caso preferiam que uma nova ordem substitua a anterior
 		update = True
 
+		delete_on_duplicate=True
+
 		#	Atualiza a base de dados com novas ordens, caso haja uma base de dados
 		#	Primeiro, verifica se há repetição de dados
 		if Order._db != None and not already_in_db:
@@ -126,11 +128,13 @@ class TransformOrder(Order):
 			if not data: 
 				Order._db.insert(table = "transform_orders", order_id = self.order_number, maxdelay = self.max_delay,
 								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity, pending = self.quantity)
-			elif update == True:
+			elif update == True and not delete_on_duplicate:
 				Order._db.update(table = "transform_orders", where = {"order_id" : order_number}, maxdelay = self.max_delay,
 								before_type = self.before_type, after_type = self.after_type, batch_size = self.quantity,
 								produced = processed, on_factory = on_factory, pending = self.quantity, state = state)
 
+			elif delete_on_duplicate:
+				del self
 #	Implementar função para dar conta do termino de uma ordem na destruição do objeto
 	#def __del__(self):
 	#	pass
