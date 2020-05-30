@@ -266,6 +266,8 @@ class GUI_V2:
 			data = self.stat_man.stat_unload()
 			self._refresh_tab(2, data)
 
+			self.stat_man.update_wharehouse()
+			
 			time.sleep(5)
 
 
