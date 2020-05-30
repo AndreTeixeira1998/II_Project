@@ -3,6 +3,8 @@ from threading import Thread
 from queue import Queue
 import sys
 import time
+import json
+
 
 from OPC_UA.opc_client import *
 from Receive_client_orders.Order import *
@@ -213,9 +215,13 @@ def run(optimizer):
 	loop.run_until_complete(opc_client_run(optimizer, loop))
 	loop.run_forever()
 	loop.close()
+		
 
 if __name__ == "__main__":
-	db = DB_handler()
+	with open("config.json", "r") as config: 
+		configuations = json.load(config)
+
+	db = DB_handler(configuations["DB"]["Host"], configuations["DB"]["Port"])
 
 	#Remover persistencia
 	db.delete_all_content(['unload_orders', 'transform_orders', 'stock_orders', 'pieces'])

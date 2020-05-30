@@ -351,7 +351,7 @@ def parse(file_string, address, port):
 					quantity = int(child.get("Quantity"))
 					t_order = TransformOrder(order_type = order_type, order_number = order_number,
 									max_delay = max_delay, before_type = before_type, after_type = after_type, quantity = quantity)
-					if hasattr(t_order, "dont_append"):
+					if not hasattr(t_order, "dont_append"):
 						orders.append(t_order)
 				elif order_type == "Unload":
 					order_number = int(ord.attrib["Number"])
@@ -360,7 +360,7 @@ def parse(file_string, address, port):
 					quantity = int(child.get("Quantity"))
 					u_order = UnloadOrder(order_number = order_number, order_type = order_type,
 									quantity = quantity, piece_type = piece_type, destination = destination)
-					if hasattr(t_order, "dont_append"):
+					if not hasattr(t_order, "dont_append"):
 						orders.append(u_order)
 				else:
 					print("Error creating order (No such order type as %s)" % order_type)

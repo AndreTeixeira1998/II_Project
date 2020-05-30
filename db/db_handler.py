@@ -2,8 +2,12 @@ import psycopg2
 import threading
 
 class DB_handler:
-	def __init__(self, host = "172.29.0.55", port = "5432"):
+	def __init__(self, host = "192.168.99.100", port = "5432"):
+
 		self.mutex = threading.Lock()
+
+		if host.lower() is "local":	host = "192.168.99.100"
+
 		try:
 			self._connection = psycopg2.connect(user = "ii",
 									password = "iisuckz",
