@@ -134,9 +134,9 @@ class StatMan:
 		filtered_data = data
 		return filtered_data
 
-	def update_wharehouse(self):
+	def update_warehouse(self):
 		for i in range(1,10):
-			amount = self._optimizer.factory_state["ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.p" + i]
+			amount = self._optimizer.factory_state["|var|CODESYS Control Win V3 x64.Application.GVL.p" + str(i)]
 			self._db.update_stored_pieces(i, amount)
 
 if __name__ == "__main__":

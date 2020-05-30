@@ -179,7 +179,7 @@ class TransformOrder(Order):
 		"""
 		if Order._db != None:
 			Order._db.update("transform_orders", where = {"order_id" : self.order_number}, curr_state = "processed", produced = self.quantity, end_time = "NOW()", on_factory = 0, pending = 0)
-            
+			
 	def begin_order(self):
 		"""
 		Updates the start time of an order in the DB
@@ -360,7 +360,7 @@ def parse(file_string, address, port):
 					quantity = int(child.get("Quantity"))
 					u_order = UnloadOrder(order_number = order_number, order_type = order_type,
 									quantity = quantity, piece_type = piece_type, destination = destination)
-					if not hasattr(t_order, "dont_append"):
+					if not hasattr(u_order, "dont_append"):
 						orders.append(u_order)
 				else:
 					print("Error creating order (No such order type as %s)" % order_type)

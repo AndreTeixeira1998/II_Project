@@ -41,6 +41,7 @@ class Tracker:
 		#	print('Updating processed')
 			curr_order.update_processed(quantity)
 		#	print('Updated')
+		print("IISUCKZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
 		self.check_cell3_clearance()
 		self.check_mb3_clearance()
 
