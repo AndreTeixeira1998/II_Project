@@ -126,6 +126,10 @@ def optimizer_init(optimizer):
 							  			Transform(optimizer.state.machines[f'Mc_2'], 'T2', 10),
 							 				Transform(optimizer.state.machines[f'Mc_3'], 'T3', 10)])
 
+	optimizer.direct_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_1'], 'T2', 30)])
+	optimizer.direct_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_2'], 'T2', 30)])
+	optimizer.direct_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_3'], 'T2', 30)])
+
 
 	print('Custom direct recipes loaded')
 
@@ -178,7 +182,8 @@ def optimizer_init(optimizer):
 	optimizer.reverse_recipes['4->7'].append([Transform(optimizer.state.machines[f'Mc_3'], 'T2', 10),
 							  			Transform(optimizer.state.machines[f'Ma_3'], 'T2', 30)])
 
-	optimizer.reverse_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_3'], 'T2', 30)])
+	optimizer.reverse_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_1'], 'T2', 30)])
+	optimizer.reverse_recipes['8->7'].append([Transform(optimizer.state.machines[f'Ma_2'], 'T2', 30)])
 
 
 

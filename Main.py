@@ -218,9 +218,9 @@ if __name__ == "__main__":
 	db = DB_handler()
 
 	#Remover persistencia
-	#db.delete_all_content(['unload_orders', 'transform_orders', 'stock_orders'])
+	db.delete_all_content(['unload_orders', 'transform_orders', 'stock_orders', 'pieces'])
 	optimizer = HorOptimizer()
-	optimizer.state.pieces_optimized = db.select('pieces', content=['Max(piece_id)+1'])[0][0]
+	#optimizer.state.pieces_optimized = db.select('pieces', content=['Max(piece_id)+1'])[0][0]
 
 	win = GUI_V2(db,optimizer)
 
